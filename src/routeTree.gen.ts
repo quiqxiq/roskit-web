@@ -25,19 +25,31 @@ import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-p
 import { Route as ClerkAuthenticatedRouteRouteImport } from './routes/clerk/_authenticated/route'
 import { Route as ClerkauthRouteRouteImport } from './routes/clerk/(auth)/route'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
+import { Route as AuthenticatedVoucherIndexRouteImport } from './routes/_authenticated/voucher/index'
 import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
+import { Route as AuthenticatedTrafficIndexRouteImport } from './routes/_authenticated/traffic/index'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedLogIndexRouteImport } from './routes/_authenticated/log/index'
+import { Route as AuthenticatedHotspotIndexRouteImport } from './routes/_authenticated/hotspot/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
+import { Route as AuthenticatedVoucherPrintRouteImport } from './routes/_authenticated/voucher/print'
+import { Route as AuthenticatedVoucherGenerateRouteImport } from './routes/_authenticated/voucher/generate'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
+import { Route as AuthenticatedReportMonthlyRouteImport } from './routes/_authenticated/report/monthly'
+import { Route as AuthenticatedReportDailyRouteImport } from './routes/_authenticated/report/daily'
+import { Route as AuthenticatedHotspotUsersRouteImport } from './routes/_authenticated/hotspot/users'
+import { Route as AuthenticatedHotspotProfilesRouteImport } from './routes/_authenticated/hotspot/profiles'
+import { Route as AuthenticatedHotspotHostsRouteImport } from './routes/_authenticated/hotspot/hosts'
+import { Route as AuthenticatedHotspotActiveRouteImport } from './routes/_authenticated/hotspot/active'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
@@ -118,11 +130,23 @@ const AuthenticatedSettingsRouteRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedVoucherIndexRoute =
+  AuthenticatedVoucherIndexRouteImport.update({
+    id: '/voucher/',
+    path: '/voucher/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
   id: '/users/',
   path: '/users/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedTrafficIndexRoute =
+  AuthenticatedTrafficIndexRouteImport.update({
+    id: '/traffic/',
+    path: '/traffic/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
   id: '/tasks/',
   path: '/tasks/',
@@ -133,6 +157,17 @@ const AuthenticatedSettingsIndexRoute =
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
+  } as any)
+const AuthenticatedLogIndexRoute = AuthenticatedLogIndexRouteImport.update({
+  id: '/log/',
+  path: '/log/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHotspotIndexRoute =
+  AuthenticatedHotspotIndexRouteImport.update({
+    id: '/hotspot/',
+    path: '/hotspot/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedHelpCenterIndexRoute =
   AuthenticatedHelpCenterIndexRouteImport.update({
@@ -166,6 +201,18 @@ const ClerkauthSignInRoute = ClerkauthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => ClerkauthRouteRoute,
 } as any)
+const AuthenticatedVoucherPrintRoute =
+  AuthenticatedVoucherPrintRouteImport.update({
+    id: '/voucher/print',
+    path: '/voucher/print',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedVoucherGenerateRoute =
+  AuthenticatedVoucherGenerateRouteImport.update({
+    id: '/voucher/generate',
+    path: '/voucher/generate',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsNotificationsRoute =
   AuthenticatedSettingsNotificationsRouteImport.update({
     id: '/notifications',
@@ -190,6 +237,42 @@ const AuthenticatedSettingsAccountRoute =
     path: '/account',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedReportMonthlyRoute =
+  AuthenticatedReportMonthlyRouteImport.update({
+    id: '/report/monthly',
+    path: '/report/monthly',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedReportDailyRoute =
+  AuthenticatedReportDailyRouteImport.update({
+    id: '/report/daily',
+    path: '/report/daily',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHotspotUsersRoute =
+  AuthenticatedHotspotUsersRouteImport.update({
+    id: '/hotspot/users',
+    path: '/hotspot/users',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHotspotProfilesRoute =
+  AuthenticatedHotspotProfilesRouteImport.update({
+    id: '/hotspot/profiles',
+    path: '/hotspot/profiles',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHotspotHostsRoute =
+  AuthenticatedHotspotHostsRouteImport.update({
+    id: '/hotspot/hosts',
+    path: '/hotspot/hosts',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHotspotActiveRoute =
+  AuthenticatedHotspotActiveRouteImport.update({
+    id: '/hotspot/active',
+    path: '/hotspot/active',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedErrorsErrorRoute =
   AuthenticatedErrorsErrorRouteImport.update({
     id: '/errors/$error',
@@ -212,19 +295,31 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/hotspot/active': typeof AuthenticatedHotspotActiveRoute
+  '/hotspot/hosts': typeof AuthenticatedHotspotHostsRoute
+  '/hotspot/profiles': typeof AuthenticatedHotspotProfilesRoute
+  '/hotspot/users': typeof AuthenticatedHotspotUsersRoute
+  '/report/daily': typeof AuthenticatedReportDailyRoute
+  '/report/monthly': typeof AuthenticatedReportMonthlyRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/voucher/generate': typeof AuthenticatedVoucherGenerateRoute
+  '/voucher/print': typeof AuthenticatedVoucherPrintRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/apps/': typeof AuthenticatedAppsIndexRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/hotspot/': typeof AuthenticatedHotspotIndexRoute
+  '/log/': typeof AuthenticatedLogIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
+  '/traffic/': typeof AuthenticatedTrafficIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
+  '/voucher/': typeof AuthenticatedVoucherIndexRoute
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -240,19 +335,31 @@ export interface FileRoutesByTo {
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/hotspot/active': typeof AuthenticatedHotspotActiveRoute
+  '/hotspot/hosts': typeof AuthenticatedHotspotHostsRoute
+  '/hotspot/profiles': typeof AuthenticatedHotspotProfilesRoute
+  '/hotspot/users': typeof AuthenticatedHotspotUsersRoute
+  '/report/daily': typeof AuthenticatedReportDailyRoute
+  '/report/monthly': typeof AuthenticatedReportMonthlyRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/voucher/generate': typeof AuthenticatedVoucherGenerateRoute
+  '/voucher/print': typeof AuthenticatedVoucherPrintRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
+  '/hotspot': typeof AuthenticatedHotspotIndexRoute
+  '/log': typeof AuthenticatedLogIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
+  '/traffic': typeof AuthenticatedTrafficIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/voucher': typeof AuthenticatedVoucherIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -273,19 +380,31 @@ export interface FileRoutesById {
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
+  '/_authenticated/hotspot/active': typeof AuthenticatedHotspotActiveRoute
+  '/_authenticated/hotspot/hosts': typeof AuthenticatedHotspotHostsRoute
+  '/_authenticated/hotspot/profiles': typeof AuthenticatedHotspotProfilesRoute
+  '/_authenticated/hotspot/users': typeof AuthenticatedHotspotUsersRoute
+  '/_authenticated/report/daily': typeof AuthenticatedReportDailyRoute
+  '/_authenticated/report/monthly': typeof AuthenticatedReportMonthlyRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
+  '/_authenticated/voucher/generate': typeof AuthenticatedVoucherGenerateRoute
+  '/_authenticated/voucher/print': typeof AuthenticatedVoucherPrintRoute
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/_authenticated/hotspot/': typeof AuthenticatedHotspotIndexRoute
+  '/_authenticated/log/': typeof AuthenticatedLogIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
+  '/_authenticated/traffic/': typeof AuthenticatedTrafficIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/voucher/': typeof AuthenticatedVoucherIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -304,19 +423,31 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/errors/$error'
+    | '/hotspot/active'
+    | '/hotspot/hosts'
+    | '/hotspot/profiles'
+    | '/hotspot/users'
+    | '/report/daily'
+    | '/report/monthly'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
+    | '/voucher/generate'
+    | '/voucher/print'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
     | '/apps/'
     | '/chats/'
     | '/help-center/'
+    | '/hotspot/'
+    | '/log/'
     | '/settings/'
     | '/tasks/'
+    | '/traffic/'
     | '/users/'
+    | '/voucher/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
@@ -332,19 +463,31 @@ export interface FileRouteTypes {
     | '/503'
     | '/'
     | '/errors/$error'
+    | '/hotspot/active'
+    | '/hotspot/hosts'
+    | '/hotspot/profiles'
+    | '/hotspot/users'
+    | '/report/daily'
+    | '/report/monthly'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
     | '/settings/notifications'
+    | '/voucher/generate'
+    | '/voucher/print'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
     | '/apps'
     | '/chats'
     | '/help-center'
+    | '/hotspot'
+    | '/log'
     | '/settings'
     | '/tasks'
+    | '/traffic'
     | '/users'
+    | '/voucher'
   id:
     | '__root__'
     | '/_authenticated'
@@ -364,19 +507,31 @@ export interface FileRouteTypes {
     | '/(errors)/503'
     | '/_authenticated/'
     | '/_authenticated/errors/$error'
+    | '/_authenticated/hotspot/active'
+    | '/_authenticated/hotspot/hosts'
+    | '/_authenticated/hotspot/profiles'
+    | '/_authenticated/hotspot/users'
+    | '/_authenticated/report/daily'
+    | '/_authenticated/report/monthly'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
     | '/_authenticated/settings/notifications'
+    | '/_authenticated/voucher/generate'
+    | '/_authenticated/voucher/print'
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
     | '/_authenticated/apps/'
     | '/_authenticated/chats/'
     | '/_authenticated/help-center/'
+    | '/_authenticated/hotspot/'
+    | '/_authenticated/log/'
     | '/_authenticated/settings/'
     | '/_authenticated/tasks/'
+    | '/_authenticated/traffic/'
     | '/_authenticated/users/'
+    | '/_authenticated/voucher/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -508,11 +663,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/voucher/': {
+      id: '/_authenticated/voucher/'
+      path: '/voucher'
+      fullPath: '/voucher/'
+      preLoaderRoute: typeof AuthenticatedVoucherIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/users/': {
       id: '/_authenticated/users/'
       path: '/users'
       fullPath: '/users/'
       preLoaderRoute: typeof AuthenticatedUsersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/traffic/': {
+      id: '/_authenticated/traffic/'
+      path: '/traffic'
+      fullPath: '/traffic/'
+      preLoaderRoute: typeof AuthenticatedTrafficIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/tasks/': {
@@ -528,6 +697,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/'
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/log/': {
+      id: '/_authenticated/log/'
+      path: '/log'
+      fullPath: '/log/'
+      preLoaderRoute: typeof AuthenticatedLogIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/hotspot/': {
+      id: '/_authenticated/hotspot/'
+      path: '/hotspot'
+      fullPath: '/hotspot/'
+      preLoaderRoute: typeof AuthenticatedHotspotIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/help-center/': {
       id: '/_authenticated/help-center/'
@@ -571,6 +754,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClerkauthSignInRouteImport
       parentRoute: typeof ClerkauthRouteRoute
     }
+    '/_authenticated/voucher/print': {
+      id: '/_authenticated/voucher/print'
+      path: '/voucher/print'
+      fullPath: '/voucher/print'
+      preLoaderRoute: typeof AuthenticatedVoucherPrintRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/voucher/generate': {
+      id: '/_authenticated/voucher/generate'
+      path: '/voucher/generate'
+      fullPath: '/voucher/generate'
+      preLoaderRoute: typeof AuthenticatedVoucherGenerateRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/notifications': {
       id: '/_authenticated/settings/notifications'
       path: '/notifications'
@@ -598,6 +795,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/settings/account'
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
+    }
+    '/_authenticated/report/monthly': {
+      id: '/_authenticated/report/monthly'
+      path: '/report/monthly'
+      fullPath: '/report/monthly'
+      preLoaderRoute: typeof AuthenticatedReportMonthlyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/report/daily': {
+      id: '/_authenticated/report/daily'
+      path: '/report/daily'
+      fullPath: '/report/daily'
+      preLoaderRoute: typeof AuthenticatedReportDailyRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/hotspot/users': {
+      id: '/_authenticated/hotspot/users'
+      path: '/hotspot/users'
+      fullPath: '/hotspot/users'
+      preLoaderRoute: typeof AuthenticatedHotspotUsersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/hotspot/profiles': {
+      id: '/_authenticated/hotspot/profiles'
+      path: '/hotspot/profiles'
+      fullPath: '/hotspot/profiles'
+      preLoaderRoute: typeof AuthenticatedHotspotProfilesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/hotspot/hosts': {
+      id: '/_authenticated/hotspot/hosts'
+      path: '/hotspot/hosts'
+      fullPath: '/hotspot/hosts'
+      preLoaderRoute: typeof AuthenticatedHotspotHostsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/hotspot/active': {
+      id: '/_authenticated/hotspot/active'
+      path: '/hotspot/active'
+      fullPath: '/hotspot/active'
+      preLoaderRoute: typeof AuthenticatedHotspotActiveRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/errors/$error': {
       id: '/_authenticated/errors/$error'
@@ -636,22 +875,46 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
+  AuthenticatedHotspotActiveRoute: typeof AuthenticatedHotspotActiveRoute
+  AuthenticatedHotspotHostsRoute: typeof AuthenticatedHotspotHostsRoute
+  AuthenticatedHotspotProfilesRoute: typeof AuthenticatedHotspotProfilesRoute
+  AuthenticatedHotspotUsersRoute: typeof AuthenticatedHotspotUsersRoute
+  AuthenticatedReportDailyRoute: typeof AuthenticatedReportDailyRoute
+  AuthenticatedReportMonthlyRoute: typeof AuthenticatedReportMonthlyRoute
+  AuthenticatedVoucherGenerateRoute: typeof AuthenticatedVoucherGenerateRoute
+  AuthenticatedVoucherPrintRoute: typeof AuthenticatedVoucherPrintRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
+  AuthenticatedHotspotIndexRoute: typeof AuthenticatedHotspotIndexRoute
+  AuthenticatedLogIndexRoute: typeof AuthenticatedLogIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
+  AuthenticatedTrafficIndexRoute: typeof AuthenticatedTrafficIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
+  AuthenticatedVoucherIndexRoute: typeof AuthenticatedVoucherIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
+  AuthenticatedHotspotActiveRoute: AuthenticatedHotspotActiveRoute,
+  AuthenticatedHotspotHostsRoute: AuthenticatedHotspotHostsRoute,
+  AuthenticatedHotspotProfilesRoute: AuthenticatedHotspotProfilesRoute,
+  AuthenticatedHotspotUsersRoute: AuthenticatedHotspotUsersRoute,
+  AuthenticatedReportDailyRoute: AuthenticatedReportDailyRoute,
+  AuthenticatedReportMonthlyRoute: AuthenticatedReportMonthlyRoute,
+  AuthenticatedVoucherGenerateRoute: AuthenticatedVoucherGenerateRoute,
+  AuthenticatedVoucherPrintRoute: AuthenticatedVoucherPrintRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
+  AuthenticatedHotspotIndexRoute: AuthenticatedHotspotIndexRoute,
+  AuthenticatedLogIndexRoute: AuthenticatedLogIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
+  AuthenticatedTrafficIndexRoute: AuthenticatedTrafficIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
+  AuthenticatedVoucherIndexRoute: AuthenticatedVoucherIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

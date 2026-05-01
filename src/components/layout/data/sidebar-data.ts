@@ -1,62 +1,112 @@
 import {
-  Construction,
-  LayoutDashboard,
-  Monitor,
+  Activity,
+  BarChart2,
+  Bell,
   Bug,
-  ListTodo,
+  Construction,
+  FileText,
   FileX,
   HelpCircle,
+  LayoutDashboard,
+  ListTodo,
   Lock,
-  Bell,
+  MessagesSquare,
+  Monitor,
   Package,
   Palette,
+  Server,
   ServerOff,
   Settings,
-  Wrench,
+  ShieldCheck,
+  Ticket,
   UserCog,
   UserX,
   Users,
-  MessagesSquare,
-  ShieldCheck,
-  AudioWaveform,
-  Command,
-  GalleryVerticalEnd,
+  Wifi,
+  Wrench,
 } from 'lucide-react'
 import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
 
 export const sidebarData: SidebarData = {
   user: {
-    name: 'satnaing',
-    email: 'satnaingdev@gmail.com',
+    name: 'admin',
+    email: 'admin@mikhmon.local',
     avatar: '/avatars/shadcn.jpg',
   },
   teams: [
     {
-      name: 'Shadcn Admin',
-      logo: Command,
-      plan: 'Vite + ShadcnUI',
+      name: 'MIKHMON',
+      logo: Wifi,
+      plan: 'MikroTik Hotspot Monitor',
     },
     {
-      name: 'Acme Inc',
-      logo: GalleryVerticalEnd,
-      plan: 'Enterprise',
+      name: 'Router-01',
+      logo: Server,
+      plan: '192.168.88.1 — Online',
     },
     {
-      name: 'Acme Corp.',
-      logo: AudioWaveform,
-      plan: 'Startup',
+      name: 'Warnet-02',
+      logo: Monitor,
+      plan: '10.0.0.1 — Online',
     },
   ],
   navGroups: [
     {
-      title: 'General',
+      title: 'Main',
       items: [
         {
           title: 'Dashboard',
           url: '/',
           icon: LayoutDashboard,
         },
+        {
+          title: 'Hotspot',
+          icon: Wifi,
+          badge: '38',
+          items: [
+            { title: 'Users', url: '/hotspot/users' },
+            { title: 'Profiles', url: '/hotspot/profiles' },
+            { title: 'Active', url: '/hotspot/active' },
+            { title: 'Hosts', url: '/hotspot/hosts' },
+          ],
+        },
+        {
+          title: 'Voucher',
+          icon: Ticket,
+          items: [
+            { title: 'Generate', url: '/voucher/generate' },
+            { title: 'Print Queue', url: '/voucher/print' },
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Monitor',
+      items: [
+        {
+          title: 'Traffic',
+          url: '/traffic',
+          icon: Activity,
+        },
+        {
+          title: 'Log',
+          url: '/log',
+          icon: FileText,
+        },
+        {
+          title: 'Report',
+          icon: BarChart2,
+          items: [
+            { title: 'Daily', url: '/report/daily' },
+            { title: 'Monthly', url: '/report/monthly' },
+          ],
+        },
+      ],
+    },
+    {
+      title: 'Demo',
+      items: [
         {
           title: 'Tasks',
           url: '/tasks',
@@ -82,18 +132,9 @@ export const sidebarData: SidebarData = {
           title: 'Secured by Clerk',
           icon: ClerkLogo,
           items: [
-            {
-              title: 'Sign In',
-              url: '/clerk/sign-in',
-            },
-            {
-              title: 'Sign Up',
-              url: '/clerk/sign-up',
-            },
-            {
-              title: 'User Management',
-              url: '/clerk/user-management',
-            },
+            { title: 'Sign In', url: '/clerk/sign-in' },
+            { title: 'Sign Up', url: '/clerk/sign-up' },
+            { title: 'User Management', url: '/clerk/user-management' },
           ],
         },
       ],
@@ -105,26 +146,11 @@ export const sidebarData: SidebarData = {
           title: 'Auth',
           icon: ShieldCheck,
           items: [
-            {
-              title: 'Sign In',
-              url: '/sign-in',
-            },
-            {
-              title: 'Sign In (2 Col)',
-              url: '/sign-in-2',
-            },
-            {
-              title: 'Sign Up',
-              url: '/sign-up',
-            },
-            {
-              title: 'Forgot Password',
-              url: '/forgot-password',
-            },
-            {
-              title: 'OTP',
-              url: '/otp',
-            },
+            { title: 'Sign In', url: '/sign-in' },
+            { title: 'Sign In (2 Col)', url: '/sign-in-2' },
+            { title: 'Sign Up', url: '/sign-up' },
+            { title: 'Forgot Password', url: '/forgot-password' },
+            { title: 'OTP', url: '/otp' },
           ],
         },
         {

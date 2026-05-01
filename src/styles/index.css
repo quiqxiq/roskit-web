@@ -1,6 +1,7 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import './theme.css';
+@import './mikhmon.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -15,6 +16,13 @@
   }
   body {
     @apply min-h-svh w-full bg-background text-foreground has-[div[data-variant='inset']]:bg-sidebar;
+    font-family: 'Plus Jakarta Sans', var(--font-inter), sans-serif;
+  }
+  code,
+  kbd,
+  pre,
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
   }
 
   /* Override Radix scroll locking for sticky headers */

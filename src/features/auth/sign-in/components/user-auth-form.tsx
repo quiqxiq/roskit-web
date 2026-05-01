@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Loader2, LogIn } from 'lucide-react'
+import { Loader2, Lock, LogIn, Mail } from 'lucide-react'
 import { toast } from 'sonner'
 import { IconFacebook, IconGithub } from '@/assets/brand-icons'
 import { useAuthStore } from '@/stores/auth-store'
@@ -95,7 +95,14 @@ export function UserAuthForm({
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder='name@example.com' {...field} />
+                <div className='relative'>
+                  <Mail className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+                  <Input
+                    placeholder='name@example.com'
+                    className='pl-9'
+                    {...field}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -108,7 +115,10 @@ export function UserAuthForm({
             <FormItem className='relative'>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <PasswordInput placeholder='********' {...field} />
+                <div className='relative'>
+                  <Lock className='absolute left-3 top-1/2 z-10 size-4 -translate-y-1/2 text-muted-foreground' />
+                  <PasswordInput placeholder='********' {...field} />
+                </div>
               </FormControl>
               <FormMessage />
               <Link
