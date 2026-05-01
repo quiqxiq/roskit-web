@@ -19,20 +19,115 @@ import {
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 
+const themeOptions = [
+  'light',
+  'dark',
+  'blue',
+  'green',
+  'pink',
+] as const
+
 const appearanceFormSchema = z.object({
-  theme: z.enum(['light', 'dark']),
+  theme: z.enum(themeOptions),
   font: z.enum(fonts),
 })
 
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>
 
+const themePreviews: Record<
+  (typeof themeOptions)[number],
+  { label: string; bg: string; card: string; bar: string; sidebar: string }
+> = {
+  light: {
+    label: 'Light',
+    bg: '#ecedef',
+    card: '#ffffff',
+    bar: '#ecedef',
+    sidebar: '#ffffff',
+  },
+  dark: {
+    label: 'Dark',
+    bg: '#020617',
+    card: '#1e293b',
+    bar: '#475569',
+    sidebar: '#0f172a',
+  },
+  blue: {
+    label: 'Ocean Blue',
+    bg: '#e0f2fe',
+    card: '#ffffff',
+    bar: '#bae6fd',
+    sidebar: '#0369a1',
+  },
+  green: {
+    label: 'Forest Green',
+    bg: '#d1fae5',
+    card: '#ffffff',
+    bar: '#a7f3d0',
+    sidebar: '#065f46',
+  },
+  pink: {
+    label: 'Rose Pink',
+    bg: '#fce7f3',
+    card: '#ffffff',
+    bar: '#fbcfe8',
+    sidebar: '#9d174d',
+  },
+}
+
+function ThemePreview({ themeKey }: { themeKey: (typeof themeOptions)[number] }) {
+  const p = themePreviews[themeKey]
+  return (
+    <div className='space-y-2 rounded-sm p-2' style={{ background: p.bg }}>
+      <div
+        className='space-y-2 rounded-md p-2 shadow-xs'
+        style={{ background: p.card }}
+      >
+        <div
+          className='h-2 w-20 rounded-lg'
+          style={{ background: p.bar }}
+        />
+        <div
+          className='h-2 w-25 rounded-lg'
+          style={{ background: p.bar }}
+        />
+      </div>
+      <div
+        className='flex items-center space-x-2 rounded-md p-2 shadow-xs'
+        style={{ background: p.card }}
+      >
+        <div
+          className='h-4 w-4 rounded-full'
+          style={{ background: p.sidebar }}
+        />
+        <div
+          className='h-2 w-25 rounded-lg'
+          style={{ background: p.bar }}
+        />
+      </div>
+      <div
+        className='flex items-center space-x-2 rounded-md p-2 shadow-xs'
+        style={{ background: p.card }}
+      >
+        <div
+          className='h-4 w-4 rounded-full'
+          style={{ background: p.sidebar }}
+        />
+        <div
+          className='h-2 w-25 rounded-lg'
+          style={{ background: p.bar }}
+        />
+      </div>
+    </div>
+  )
+}
+
 export function AppearanceForm() {
   const { font, setFont } = useFont()
   const { theme, setTheme } = useTheme()
 
-  // This can come from your database or API.
   const defaultValues: Partial<AppearanceFormValues> = {
-    theme: theme as 'light' | 'dark',
+    theme: theme === 'system' ? 'light' : (theme as (typeof themeOptions)[number]),
     font,
   }
 
@@ -96,60 +191,23 @@ export function AppearanceForm() {
               <RadioGroup
                 onValueChange={field.onChange}
                 defaultValue={field.value}
-                className='grid max-w-md grid-cols-2 gap-8 pt-2'
+                className='grid max-w-lg grid-cols-5 gap-4 pt-2'
               >
-                <FormItem>
-                  <FormLabel className='[&:has([data-state=checked])>div]:border-primary'>
-                    <FormControl>
-                      <RadioGroupItem value='light' className='sr-only' />
-                    </FormControl>
-                    <div className='items-center rounded-md border-2 border-muted p-1 hover:border-accent'>
-                      <div className='space-y-2 rounded-sm bg-[#ecedef] p-2'>
-                        <div className='space-y-2 rounded-md bg-white p-2 shadow-xs'>
-                          <div className='h-2 w-20 rounded-lg bg-[#ecedef]' />
-                          <div className='h-2 w-25 rounded-lg bg-[#ecedef]' />
-                        </div>
-                        <div className='flex items-center space-x-2 rounded-md bg-white p-2 shadow-xs'>
-                          <div className='h-4 w-4 rounded-full bg-[#ecedef]' />
-                          <div className='h-2 w-25 rounded-lg bg-[#ecedef]' />
-                        </div>
-                        <div className='flex items-center space-x-2 rounded-md bg-white p-2 shadow-xs'>
-                          <div className='h-4 w-4 rounded-full bg-[#ecedef]' />
-                          <div className='h-2 w-25 rounded-lg bg-[#ecedef]' />
-                        </div>
+                {themeOptions.map((key) => (
+                  <FormItem key={key}>
+                    <FormLabel className='[&:has([data-state=checked])>div]:border-primary'>
+                      <FormControl>
+                        <RadioGroupItem value={key} className='sr-only' />
+                      </FormControl>
+                      <div className='items-center rounded-md border-2 border-muted p-1 hover:border-accent'>
+                        <ThemePreview themeKey={key} />
                       </div>
-                    </div>
-                    <span className='block w-full p-2 text-center font-normal'>
-                      Light
-                    </span>
-                  </FormLabel>
-                </FormItem>
-                <FormItem>
-                  <FormLabel className='[&:has([data-state=checked])>div]:border-primary'>
-                    <FormControl>
-                      <RadioGroupItem value='dark' className='sr-only' />
-                    </FormControl>
-                    <div className='items-center rounded-md border-2 border-muted bg-popover p-1 hover:bg-accent hover:text-accent-foreground'>
-                      <div className='space-y-2 rounded-sm bg-slate-950 p-2'>
-                        <div className='space-y-2 rounded-md bg-slate-800 p-2 shadow-xs'>
-                          <div className='h-2 w-20 rounded-lg bg-slate-400' />
-                          <div className='h-2 w-25 rounded-lg bg-slate-400' />
-                        </div>
-                        <div className='flex items-center space-x-2 rounded-md bg-slate-800 p-2 shadow-xs'>
-                          <div className='h-4 w-4 rounded-full bg-slate-400' />
-                          <div className='h-2 w-25 rounded-lg bg-slate-400' />
-                        </div>
-                        <div className='flex items-center space-x-2 rounded-md bg-slate-800 p-2 shadow-xs'>
-                          <div className='h-4 w-4 rounded-full bg-slate-400' />
-                          <div className='h-2 w-25 rounded-lg bg-slate-400' />
-                        </div>
-                      </div>
-                    </div>
-                    <span className='block w-full p-2 text-center font-normal'>
-                      Dark
-                    </span>
-                  </FormLabel>
-                </FormItem>
+                      <span className='block w-full p-2 text-center text-xs font-normal'>
+                        {themePreviews[key].label}
+                      </span>
+                    </FormLabel>
+                  </FormItem>
+                ))}
               </RadioGroup>
             </FormItem>
           )}

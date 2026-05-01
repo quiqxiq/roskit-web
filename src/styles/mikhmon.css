@@ -165,3 +165,73 @@
   animation: mk-ping 1.4s ease infinite;
   opacity: 0.75;
 }
+
+/* ── Mobile bottom navigation ── */
+.mk-bottom-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  height: 64px;
+  background: var(--sidebar-background);
+  border-top: 1px solid var(--sidebar-border);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@media (min-width: 768px) {
+  .mk-bottom-nav {
+    display: none;
+  }
+}
+
+.mk-bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--sidebar-foreground);
+  opacity: 0.6;
+  transition: opacity 0.15s, color 0.15s;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mk-bottom-nav-btn:hover,
+.mk-bottom-nav-btn:focus-visible {
+  opacity: 0.8;
+}
+
+.mk-bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  position: relative;
+  padding: 4px 0;
+}
+
+.mk-bottom-nav-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.mk-bottom-nav-active {
+  color: var(--sidebar-primary);
+  opacity: 1;
+}
+
+.mk-bottom-nav-dot {
+  position: absolute;
+  top: 0;
+  width: 16px;
+  height: 2px;
+  border-radius: 9999px;
+  background: var(--sidebar-primary);
+}

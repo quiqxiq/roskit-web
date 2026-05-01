@@ -1,12 +1,14 @@
 import { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
 
-type Theme = 'dark' | 'light' | 'system'
+type Theme = 'dark' | 'light' | 'system' | 'blue' | 'green' | 'pink'
 type ResolvedTheme = Exclude<Theme, 'system'>
 
 const DEFAULT_THEME = 'system'
 const THEME_COOKIE_NAME = 'vite-ui-theme'
-const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
+const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
+
+const THEME_CLASSES = ['light', 'dark', 'blue', 'green', 'pink'] as const
 
 type ThemeProviderProps = {
   children: React.ReactNode
@@ -32,6 +34,15 @@ const initialState: ThemeProviderState = {
 
 const ThemeContext = createContext<ThemeProviderState>(initialState)
 
+function resolveThemeClass(theme: Theme): ResolvedTheme {
+  if (theme === 'system') {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light'
+  }
+  return theme as ResolvedTheme
+}
+
 export function ThemeProvider({
   children,
   defaultTheme = DEFAULT_THEME,
@@ -42,29 +53,22 @@ export function ThemeProvider({
     () => (getCookie(storageKey) as Theme) || defaultTheme
   )
 
-  // Optimized: Memoize the resolved theme calculation to prevent unnecessary re-computations
-  const resolvedTheme = useMemo((): ResolvedTheme => {
-    if (theme === 'system') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches
-        ? 'dark'
-        : 'light'
-    }
-    return theme as ResolvedTheme
-  }, [theme])
+  const resolvedTheme = useMemo((): ResolvedTheme => resolveThemeClass(theme), [theme])
 
   useEffect(() => {
     const root = window.document.documentElement
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
 
-    const applyTheme = (currentResolvedTheme: ResolvedTheme) => {
-      root.classList.remove('light', 'dark') // Remove existing theme classes
-      root.classList.add(currentResolvedTheme) // Add the new theme class
+    const applyTheme = (currentTheme: ResolvedTheme) => {
+      for (const cls of THEME_CLASSES) {
+        root.classList.remove(cls)
+      }
+      root.classList.add(currentTheme)
     }
 
     const handleChange = () => {
       if (theme === 'system') {
-        const systemTheme = mediaQuery.matches ? 'dark' : 'light'
-        applyTheme(systemTheme)
+        applyTheme(resolveThemeClass('system'))
       }
     }
 
@@ -75,9 +79,9 @@ export function ThemeProvider({
     return () => mediaQuery.removeEventListener('change', handleChange)
   }, [theme, resolvedTheme])
 
-  const setTheme = (theme: Theme) => {
-    setCookie(storageKey, theme, THEME_COOKIE_MAX_AGE)
-    _setTheme(theme)
+  const setTheme = (newTheme: Theme) => {
+    setCookie(storageKey, newTheme, THEME_COOKIE_MAX_AGE)
+    _setTheme(newTheme)
   }
 
   const resetTheme = () => {
