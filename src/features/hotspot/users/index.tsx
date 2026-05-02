@@ -1,12 +1,7 @@
 import { UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { PingIndicator } from '@/components/ping-indicator'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
 import { HotspotUsersTable } from './components/hotspot-users-table'
 import { hotspotUsers } from './data/data'
 
@@ -16,13 +11,6 @@ export function HotspotUsers() {
 
   return (
     <>
-      <Header>
-        <Search className='me-auto' />
-        <PingIndicator />
-        <ThemeSwitch />
-        <ProfileDropdown />
-      </Header>
-
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
         <div className='flex flex-wrap items-end justify-between gap-2'>
           <div>

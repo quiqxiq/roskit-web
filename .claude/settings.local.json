@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Get-ChildItem -Path \"C:\\\\Users\\\\masji\\\\web\\\\roskit-web\" -Recurse -Name -Filter \"*.tsx\" -o ErrorAction SilentlyContinue)",
+      "Bash(Select-Object -First 50)",
+      "Bash(rtk tsc *)"
+    ]
+  }
+}

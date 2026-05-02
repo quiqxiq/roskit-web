@@ -6,8 +6,13 @@ import { MobileNavProvider } from '@/context/mobile-nav-store'
 import { SearchProvider } from '@/context/search-provider'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
+import { Header } from '@/components/layout/header'
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav'
 import { SkipToMain } from '@/components/skip-to-main'
+import { PingIndicator } from '@/components/ping-indicator'
+import { ProfileDropdown } from '@/components/profile-dropdown'
+import { Search } from '@/components/search'
+import { ThemeSwitch } from '@/components/theme-switch'
 
 type AuthenticatedLayoutProps = {
   children?: React.ReactNode
@@ -30,6 +35,12 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
                 'pb-16 md:pb-0'
               )}
             >
+              <Header fixed>
+                <Search className='me-auto' />
+                <PingIndicator />
+                <ThemeSwitch />
+                <ProfileDropdown />
+              </Header>
               {children ?? <Outlet />}
             </SidebarInset>
             <MobileBottomNav />
