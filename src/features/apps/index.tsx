@@ -81,10 +81,10 @@ export function Apps() {
       {/* ===== Content ===== */}
       <Main fixed>
         <div>
-          <h1 className='text-2xl font-bold tracking-tight'>
+          <h1 className='text-xl font-bold tracking-tight sm:text-2xl'>
             App Integrations
           </h1>
-          <p className='text-muted-foreground'>
+          <p className='text-sm text-muted-foreground sm:text-base'>
             Here&apos;s a list of your apps for the integration!
           </p>
         </div>

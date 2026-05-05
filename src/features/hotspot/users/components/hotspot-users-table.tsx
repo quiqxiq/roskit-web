@@ -24,10 +24,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { profileOptions, serverOptions, statusOptions } from '../data/data'
+import {
+  DataTableMobileCards,
+  DataTablePagination,
+  DataTableToolbar,
+  type MobileCardDetail,
+} from '@/components/data-table'
+import { Badge } from '@/components/ui/badge'
+import { formatBytes, profileOptions, serverOptions, statusOptions } from '../data/data'
 import { type HotspotUser } from '../data/schema'
 import { columns } from './columns'
+import { DataTableRowActions } from './data-table-row-actions'
 
 type HotspotUsersTableProps = {
   data: HotspotUser[]
@@ -90,7 +97,7 @@ export function HotspotUsersTable({ data }: HotspotUsersTableProps) {
           },
         ]}
       />
-      <div className='overflow-hidden rounded-md border'>
+      <div className='hidden overflow-hidden rounded-md border md:block'>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -148,6 +155,78 @@ export function HotspotUsersTable({ data }: HotspotUsersTableProps) {
             )}
           </TableBody>
         </Table>
+      </div>
+      <div className='md:hidden'>
+        <DataTableMobileCards
+          table={table}
+          renderPrimary={(row) => {
+            const user = row.original
+            return (
+              <div className='flex min-w-0 items-start gap-2'>
+                <span className='min-w-0 flex-1 truncate font-semibold'>
+                  {user.username}
+                </span>
+                <Badge
+                  variant={user.status}
+                  className='shrink-0 text-[10px] capitalize'
+                >
+                  {user.status}
+                </Badge>
+              </div>
+            )
+          }}
+          renderMeta={(row) => (
+            <span className='font-mono'>{row.original.profile}</span>
+          )}
+          renderDetails={(row): MobileCardDetail[] => {
+            const user = row.original
+            const isActive = user.status === 'online' || user.status === 'idle'
+            return [
+              {
+                label: 'MAC',
+                value: (
+                  <span className='font-mono text-[11px]'>
+                    {user.macAddress}
+                  </span>
+                ),
+              },
+              {
+                label: 'Server',
+                value: <span className='font-mono'>{user.server}</span>,
+              },
+              {
+                label: 'Uptime',
+                value: (
+                  <span
+                    className={cn(
+                      'font-mono',
+                      user.uptime === '—' && 'text-muted-foreground'
+                    )}
+                  >
+                    {user.uptime}
+                  </span>
+                ),
+              },
+              {
+                label: 'Traffic',
+                value: isActive ? (
+                  <span className='font-mono text-[11px]'>
+                    <span className='text-sky-600 dark:text-sky-400'>
+                      ↓{formatBytes(user.bytesIn)}
+                    </span>
+                    {' '}
+                    <span className='text-violet-600 dark:text-violet-400'>
+                      ↑{formatBytes(user.bytesOut)}
+                    </span>
+                  </span>
+                ) : (
+                  <span className='text-muted-foreground'>—</span>
+                ),
+              },
+            ]
+          }}
+          renderActions={(row) => <DataTableRowActions row={row} />}
+        />
       </div>
       <div className='flex items-center justify-between'>
         <DataTablePagination table={table} className='flex-1' />

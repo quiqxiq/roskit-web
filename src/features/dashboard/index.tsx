@@ -64,10 +64,12 @@ export function Dashboard() {
     <>
       {/* ===== Main ===== */}
       <Main>
-        <div className='mb-2 flex items-center justify-between space-y-2'>
-          <h1 className='text-2xl font-bold tracking-tight'>Dashboard</h1>
+        <div className='mb-2 flex items-center justify-between gap-2'>
+          <h1 className='text-xl font-bold tracking-tight sm:text-2xl'>
+            Dashboard
+          </h1>
           <div className='flex items-center space-x-2'>
-            <Button>Download</Button>
+            <Button size='sm'>Download</Button>
           </div>
         </div>
         <Tabs
@@ -88,22 +90,24 @@ export function Dashboard() {
             </TabsList>
           </div>
           <TabsContent value='overview' className='space-y-4'>
-            <div className='grid gap-4 sm:grid-cols-2 lg:grid-cols-5'>
+            <div className='grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5'>
               {kpiStats.map((s) => {
                 const Icon = s.icon
                 return (
                   <div
                     key={s.label}
-                    className={`${s.cls} relative overflow-hidden rounded-xl p-4 text-white shadow-md`}
+                    className={`${s.cls} relative overflow-hidden rounded-xl p-3 text-white shadow-md sm:p-4`}
                   >
-                    <p className='mb-1 text-xs font-bold tracking-widest uppercase opacity-75'>
+                    <p className='mb-1 text-[10px] font-bold tracking-widest uppercase opacity-75 sm:text-xs'>
                       {s.label}
                     </p>
-                    <p className='text-3xl font-extrabold tracking-tight'>
+                    <p className='text-2xl font-extrabold tracking-tight sm:text-3xl'>
                       {s.value}
                     </p>
-                    <p className='mt-1 text-xs opacity-75'>{s.sub}</p>
-                    <Icon className='absolute top-1/2 right-3 size-10 -translate-y-1/2 opacity-20' />
+                    <p className='mt-1 text-[11px] opacity-75 sm:text-xs'>
+                      {s.sub}
+                    </p>
+                    <Icon className='absolute top-1/2 right-2 size-8 -translate-y-1/2 opacity-20 sm:right-3 sm:size-10' />
                   </div>
                 )
               })}

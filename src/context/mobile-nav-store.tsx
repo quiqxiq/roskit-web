@@ -43,6 +43,7 @@ type MobileNavContextType = {
   remove: (id: MobileNavItemId) => void
   moveUp: (id: MobileNavItemId) => void
   moveDown: (id: MobileNavItemId) => void
+  reorder: (activeId: MobileNavItemId, overId: MobileNavItemId) => void
   reset: () => void
   maxItems: number
 }
@@ -116,13 +117,39 @@ export function MobileNavProvider({ children }: MobileNavProviderProps) {
     [persist]
   )
 
+  const reorder = useCallback(
+    (activeId: MobileNavItemId, overId: MobileNavItemId) => {
+      if (activeId === overId) return
+      setItems((prev) => {
+        const from = prev.indexOf(activeId)
+        const to = prev.indexOf(overId)
+        if (from < 0 || to < 0) return prev
+        const next = [...prev]
+        const [moved] = next.splice(from, 1)
+        next.splice(to, 0, moved)
+        persist(next)
+        return next
+      })
+    },
+    [persist]
+  )
+
   const reset = useCallback(() => {
     persist([...DEFAULT_MOBILE_NAV_ITEMS] as MobileNavItemId[])
   }, [persist])
 
   return (
     <MobileNavContext
-      value={{ items, add, remove, moveUp, moveDown, reset, maxItems: MAX_ITEMS }}
+      value={{
+        items,
+        add,
+        remove,
+        moveUp,
+        moveDown,
+        reorder,
+        reset,
+        maxItems: MAX_ITEMS,
+      }}
     >
       {children}
     </MobileNavContext>

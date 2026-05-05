@@ -22,10 +22,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { priorities, statuses } from '../data/data'
+import {
+  DataTableMobileCards,
+  DataTablePagination,
+  DataTableToolbar,
+  type MobileCardDetail,
+} from '@/components/data-table'
+import { Badge } from '@/components/ui/badge'
+import { labels, priorities, statuses } from '../data/data'
 import { type Task } from '../data/schema'
 import { DataTableBulkActions } from './data-table-bulk-actions'
+import { DataTableRowActions } from './data-table-row-actions'
 import { tasksColumns as columns } from './tasks-columns'
 
 const route = getRouteApi('/_authenticated/tasks/')
@@ -127,7 +134,7 @@ export function TasksTable({ data }: DataTableProps) {
           },
         ]}
       />
-      <div className='overflow-hidden rounded-md border'>
+      <div className='hidden overflow-hidden rounded-md border md:block'>
         <Table className='min-w-xl'>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -189,6 +196,64 @@ export function TasksTable({ data }: DataTableProps) {
             )}
           </TableBody>
         </Table>
+      </div>
+      <div className='md:hidden'>
+        <DataTableMobileCards
+          table={table}
+          renderPrimary={(row) => {
+            const task = row.original
+            const label = labels.find((l) => l.value === task.label)
+            const status = statuses.find((s) => s.value === task.status)
+            return (
+              <div className='flex min-w-0 flex-col gap-1'>
+                <span className='line-clamp-2 break-words text-sm font-medium'>
+                  {task.title}
+                </span>
+                <div className='flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground'>
+                  {status && (
+                    <span className='inline-flex items-center gap-1'>
+                      {status.icon && (
+                        <status.icon className='size-3.5' />
+                      )}
+                      <span>{status.label}</span>
+                    </span>
+                  )}
+                  {label && (
+                    <Badge
+                      variant='outline'
+                      className='h-4 px-1.5 text-[10px]'
+                    >
+                      {label.label}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            )
+          }}
+          renderMeta={(row) => (
+            <span className='font-mono'>{row.original.id}</span>
+          )}
+          renderDetails={(row): MobileCardDetail[] => {
+            const task = row.original
+            const priority = priorities.find((p) => p.value === task.priority)
+            return [
+              {
+                label: 'Priority',
+                value: priority ? (
+                  <span className='inline-flex items-center gap-1.5'>
+                    {priority.icon && (
+                      <priority.icon className='size-3.5 text-muted-foreground' />
+                    )}
+                    <span>{priority.label}</span>
+                  </span>
+                ) : (
+                  '—'
+                ),
+              },
+            ]
+          }}
+          renderActions={(row) => <DataTableRowActions row={row} />}
+        />
       </div>
       <DataTablePagination table={table} className='mt-auto' />
       <DataTableBulkActions table={table} />

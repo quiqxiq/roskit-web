@@ -21,10 +21,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { roles } from '../data/data'
+import {
+  DataTableMobileCards,
+  DataTablePagination,
+  DataTableToolbar,
+  type MobileCardDetail,
+} from '@/components/data-table'
+import { Badge } from '@/components/ui/badge'
+import { callTypes, roles } from '../data/data'
 import { type User } from '../data/schema'
 import { DataTableBulkActions } from './data-table-bulk-actions'
+import { DataTableRowActions } from './data-table-row-actions'
 import { usersColumns as columns } from './users-columns'
 
 type DataTableProps = {
@@ -121,7 +128,7 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
           },
         ]}
       />
-      <div className='overflow-hidden rounded-md border'>
+      <div className='hidden overflow-hidden rounded-md border md:block'>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -186,6 +193,68 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
             )}
           </TableBody>
         </Table>
+      </div>
+      <div className='md:hidden'>
+        <DataTableMobileCards
+          table={table}
+          renderPrimary={(row) => {
+            const user = row.original
+            const badgeColor = callTypes.get(user.status)
+            return (
+              <div className='flex min-w-0 items-start gap-2'>
+                <span className='min-w-0 flex-1 truncate'>{user.username}</span>
+                <Badge
+                  variant='outline'
+                  className={cn(
+                    'shrink-0 text-[10px] capitalize',
+                    badgeColor
+                  )}
+                >
+                  {user.status}
+                </Badge>
+              </div>
+            )
+          }}
+          renderMeta={(row) => {
+            const { firstName, lastName } = row.original
+            return <span>{`${firstName} ${lastName}`.trim() || '—'}</span>
+          }}
+          renderDetails={(row): MobileCardDetail[] => {
+            const user = row.original
+            const userRole = roles.find((r) => r.value === user.role)
+            return [
+              {
+                label: 'Email',
+                value: (
+                  <span className='break-all font-mono text-[11px]'>
+                    {user.email}
+                  </span>
+                ),
+              },
+              {
+                label: 'Phone',
+                value: user.phoneNumber || '—',
+              },
+              {
+                label: 'Role',
+                value: userRole ? (
+                  <span className='inline-flex items-center gap-1.5 capitalize'>
+                    {userRole.icon && (
+                      <userRole.icon
+                        size={14}
+                        className='text-muted-foreground'
+                      />
+                    )}
+                    <span>{userRole.label}</span>
+                  </span>
+                ) : (
+                  '—'
+                ),
+              },
+            ]
+          }}
+          renderActions={(row) => <DataTableRowActions row={row} />}
+        />
       </div>
       <DataTablePagination table={table} className='mt-auto' />
       <DataTableBulkActions table={table} />
