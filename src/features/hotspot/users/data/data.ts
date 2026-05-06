@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker'
+import { type HotspotUser } from './schema'
 
 faker.seed(42)
 
@@ -37,7 +38,7 @@ function formatBytes(bytes: number): string {
 
 export { formatBytes }
 
-export const hotspotUsers = Array.from({ length: 250 }, () => {
+export const hotspotUsersSeed: HotspotUser[] = Array.from({ length: 250 }, () => {
   const status = faker.helpers.arrayElement(statuses)
   const profile = faker.helpers.arrayElement(profiles)
   const isOnline = status === 'online' || status === 'idle'

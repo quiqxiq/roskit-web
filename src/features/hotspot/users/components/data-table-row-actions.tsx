@@ -2,6 +2,7 @@ import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
 import { Copy, Pencil, Trash2, Power } from 'lucide-react'
 import { toast } from 'sonner'
+import { useHotspotUsersStore } from '@/stores/hotspot-users-store'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -11,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { type HotspotUser } from '../data/schema'
+import { useUsersDialogStore } from '../store/users-dialog-store'
 
 type DataTableRowActionsProps = {
   row: Row<HotspotUser>
@@ -18,6 +20,8 @@ type DataTableRowActionsProps = {
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const user = row.original
+  const openDialog = useUsersDialogStore((s) => s.open)
+  const updateUser = useHotspotUsersStore((s) => s.update)
 
   const handleCopyVoucher = () => {
     navigator.clipboard.writeText(`${user.username}\n${user.password}`)
@@ -25,17 +29,16 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   }
 
   const handleDisconnect = () => {
-    toast.promise(Promise.resolve(), {
-      loading: `Disconnecting ${user.username}...`,
-      success: `${user.username} disconnected`,
-    })
+    updateUser(user.id, { status: 'offline', uptime: '—' })
+    toast.success(`${user.username} disconnected`)
+  }
+
+  const handleEdit = () => {
+    openDialog('edit', { target: user })
   }
 
   const handleRemove = () => {
-    toast.promise(Promise.resolve(), {
-      loading: `Removing ${user.username}...`,
-      success: `${user.username} removed`,
-    })
+    openDialog('delete', { target: user })
   }
 
   return (
@@ -50,7 +53,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-44'>
-        <DropdownMenuItem>
+        <DropdownMenuItem onClick={handleEdit}>
           <Pencil className='size-4' />
           Edit User
         </DropdownMenuItem>

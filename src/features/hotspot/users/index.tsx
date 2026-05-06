@@ -1,11 +1,15 @@
 import { UserPlus } from 'lucide-react'
 import { toast } from 'sonner'
+import { useHotspotUsersStore } from '@/stores/hotspot-users-store'
 import { Button } from '@/components/ui/button'
 import { Main } from '@/components/layout/main'
 import { HotspotUsersTable } from './components/hotspot-users-table'
-import { hotspotUsers } from './data/data'
+import { UserDialogs } from './dialogs/user-dialogs'
+import { useUsersDialogStore } from './store/users-dialog-store'
 
 export function HotspotUsers() {
+  const hotspotUsers = useHotspotUsersStore((s) => s.items)
+  const openDialog = useUsersDialogStore((s) => s.open)
   const onlineCount = hotspotUsers.filter((u) => u.status === 'online').length
   const totalCount = hotspotUsers.length
 
@@ -31,7 +35,11 @@ export function HotspotUsers() {
             >
               Export
             </Button>
-            <Button size='sm' className='gap-1.5'>
+            <Button
+              size='sm'
+              className='gap-1.5'
+              onClick={() => openDialog('add')}
+            >
               <UserPlus className='size-4' />
               Add User
             </Button>
@@ -39,6 +47,7 @@ export function HotspotUsers() {
         </div>
         <HotspotUsersTable data={hotspotUsers} />
       </Main>
+      <UserDialogs />
     </>
   )
 }

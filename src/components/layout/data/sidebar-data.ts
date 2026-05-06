@@ -63,7 +63,6 @@ export const sidebarData: SidebarData = {
         {
           title: 'Hotspot',
           icon: Wifi,
-          badge: '38',
           items: [
             { title: 'Users', url: '/hotspot/users' },
             { title: 'Profiles', url: '/hotspot/profiles' },

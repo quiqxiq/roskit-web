@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { ComingSoon } from '@/components/coming-soon'
+import { HotspotActive } from '@/features/hotspot/active'
 
 export const Route = createFileRoute('/_authenticated/hotspot/active')({
-  component: ComingSoon,
+  component: HotspotActive,
 })

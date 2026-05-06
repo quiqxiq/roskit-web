@@ -13,9 +13,9 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { Trash2 } from 'lucide-react'
-import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { useUsersDialogStore } from '../store/users-dialog-store'
 import {
   Table,
   TableBody,
@@ -41,6 +41,7 @@ type HotspotUsersTableProps = {
 }
 
 export function HotspotUsersTable({ data }: HotspotUsersTableProps) {
+  const openDialog = useUsersDialogStore((s) => s.open)
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -236,7 +237,10 @@ export function HotspotUsersTable({ data }: HotspotUsersTableProps) {
             size='sm'
             className='gap-1.5'
             onClick={() => {
-              toast.success(`Removed ${selectedCount} user${selectedCount > 1 ? 's' : ''}`)
+              const ids = table
+                .getFilteredSelectedRowModel()
+                .rows.map((r) => r.original.id)
+              openDialog('multi-delete', { ids })
               table.resetRowSelection()
             }}
           >
