@@ -36,7 +36,7 @@ export const sidebarData: SidebarData = {
     email: 'admin@mikhmon.local',
     avatar: '/avatars/shadcn.jpg',
   },
-  teams: [
+  routers: [
     {
       name: 'MIKHMON',
       logo: Wifi,

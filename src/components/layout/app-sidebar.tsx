@@ -1,4 +1,5 @@
 import { useLayout } from '@/context/layout-provider'
+import { useIsSuperadmin } from '@/stores/role-mock-store'
 import {
   Sidebar,
   SidebarContent,
@@ -10,18 +11,20 @@ import {
 import { useSidebarData } from './data/use-sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
-import { TeamSwitcher } from './team-switcher'
+import { RouterSwitcher } from './router-switcher'
+import { TenantSwitcher } from './tenant-switcher'
 
 export function AppSidebar() {
   const { collapsible, variant } = useLayout()
   const sidebarData = useSidebarData()
+  const isSuperadmin = useIsSuperadmin()
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
-        <TeamSwitcher teams={sidebarData.teams} />
+        {isSuperadmin && <TenantSwitcher />}
+        <RouterSwitcher routers={sidebarData.routers} />
 
-        {/* Replace <TeamSwitch /> with the following <AppTitle />
-         /* if you want to use the normal app title instead of TeamSwitch dropdown */}
+        {/* Replace switchers above with <AppTitle /> below for a plain app title */}
         {/* <AppTitle /> */}
       </SidebarHeader>
       <SidebarContent>
