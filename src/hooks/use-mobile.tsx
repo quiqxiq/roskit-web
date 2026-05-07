@@ -14,3 +14,22 @@ export function useIsMobile() {
     () => false
   )
 }
+
+const DESKTOP_BREAKPOINT = 1024
+const DESKTOP_QUERY = `(min-width: ${DESKTOP_BREAKPOINT}px)`
+
+/**
+ * True ketika viewport ≥1024px (Tailwind `lg` breakpoint).
+ * SSR-safe: default `false` saat server render.
+ */
+export function useIsDesktop() {
+  return React.useSyncExternalStore(
+    (callback) => {
+      const mql = window.matchMedia(DESKTOP_QUERY)
+      mql.addEventListener('change', callback)
+      return () => mql.removeEventListener('change', callback)
+    },
+    () => window.matchMedia(DESKTOP_QUERY).matches,
+    () => false
+  )
+}

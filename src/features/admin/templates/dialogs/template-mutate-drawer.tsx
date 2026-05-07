@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Lock, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGlobalTemplatesStore } from '@/stores/global-templates-store'
+import { useIsDesktop } from '@/hooks/use-mobile'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -66,10 +67,13 @@ type Draft = Pick<
   'name' | 'type' | 'header' | 'row' | 'footer' | 'isBuiltin'
 >
 
+type DraftUpdater = <K extends keyof Draft>(key: K, value: Draft[K]) => void
+
 function TemplateForm({ mode, target, onClose }: FormProps) {
   const addTemplate = useGlobalTemplatesStore((s) => s.add)
   const updateTemplate = useGlobalTemplatesStore((s) => s.update)
   const resetToDefault = useGlobalTemplatesStore((s) => s.resetToDefault)
+  const isDesktop = useIsDesktop()
 
   const [draft, setDraft] = useState<Draft>(() => {
     if (mode === 'edit' && target) {
@@ -93,7 +97,7 @@ function TemplateForm({ mode, target, onClose }: FormProps) {
     }
   })
 
-  const update = <K extends keyof Draft>(key: K, value: Draft[K]) => {
+  const update: DraftUpdater = (key, value) => {
     setDraft((prev) => ({ ...prev, [key]: value }))
   }
 
@@ -101,7 +105,6 @@ function TemplateForm({ mode, target, onClose }: FormProps) {
     if (!target || !target.isBuiltin) return
     const ok = resetToDefault(target.id)
     if (ok) {
-      // ambil ulang state hasil reset dari store
       const fresh = useGlobalTemplatesStore
         .getState()
         .items.find((t) => t.id === target.id)
@@ -161,7 +164,7 @@ function TemplateForm({ mode, target, onClose }: FormProps) {
   const isBuiltin = mode === 'edit' && target?.isBuiltin === true
 
   return (
-    <SheetContent className='flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl'>
+    <SheetContent className='flex w-full max-w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl'>
       <SheetHeader className='border-b'>
         <SheetTitle className='flex items-center gap-2'>
           {mode === 'add' ? 'Add Global Template' : 'Edit Template'}
@@ -174,106 +177,24 @@ function TemplateForm({ mode, target, onClose }: FormProps) {
         </SheetTitle>
         <SheetDescription>
           1 template = header + row + footer. Built-in template di-copy ke
-          tenant baru saat AdminCreate. Preview live di kanan (iframe sandbox).
+          tenant baru saat AdminCreate.
         </SheetDescription>
       </SheetHeader>
 
       <form
         id='template-form'
-        className='flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:overflow-hidden'
+        className='flex min-h-0 flex-1 flex-col overflow-hidden'
         onSubmit={handleSubmit}
       >
-        {/* === EDITOR === */}
-        <div className='flex min-h-0 flex-col gap-3 lg:overflow-y-auto lg:pe-2'>
-          <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
-            <Field label='Name'>
-              <Input
-                value={draft.name}
-                onChange={(e) => update('name', e.target.value)}
-                placeholder='Default'
-              />
-            </Field>
-            <Field
-              label='Type'
-              hint='Identifier bebas (default, small, thermal, thermal-58, ...)'
-            >
-              <Input
-                value={draft.type}
-                onChange={(e) =>
-                  update(
-                    'type',
-                    e.target.value
-                      .toLowerCase()
-                      .replace(/[^a-z0-9-]+/g, '-')
-                      .replace(/^-+|-+$/g, '')
-                  )
-                }
-                placeholder='default'
-                className='font-mono'
-                disabled={isBuiltin}
-              />
-            </Field>
-          </div>
-
-          <Tabs defaultValue='row' className='flex min-h-0 flex-1 flex-col gap-2'>
-            <TabsList className='w-fit'>
-              <TabsTrigger value='header'>Header</TabsTrigger>
-              <TabsTrigger value='row'>Row</TabsTrigger>
-              <TabsTrigger value='footer'>Footer</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value='header' className='flex min-h-0 flex-1 flex-col'>
-              <Textarea
-                value={draft.header}
-                onChange={(e) => update('header', e.target.value)}
-                rows={20}
-                spellCheck={false}
-                className='flex-1 min-h-64 font-mono text-[11px] leading-relaxed'
-                placeholder='<!DOCTYPE html><html>...<body>'
-              />
-            </TabsContent>
-            <TabsContent value='row' className='flex min-h-0 flex-1 flex-col'>
-              <Textarea
-                value={draft.row}
-                onChange={(e) => update('row', e.target.value)}
-                rows={20}
-                spellCheck={false}
-                className='flex-1 min-h-64 font-mono text-[11px] leading-relaxed'
-                placeholder='<table class="voucher">...</table>'
-              />
-            </TabsContent>
-            <TabsContent value='footer' className='flex min-h-0 flex-1 flex-col'>
-              <Textarea
-                value={draft.footer}
-                onChange={(e) => update('footer', e.target.value)}
-                rows={20}
-                spellCheck={false}
-                className='flex-1 min-h-64 font-mono text-[11px] leading-relaxed'
-                placeholder='</body></html>'
-              />
-            </TabsContent>
-          </Tabs>
-
-          <div className='rounded-md border bg-muted/30 px-3 py-2 text-[10px]'>
-            <p className='mb-1 font-medium text-muted-foreground'>Variables</p>
-            <p className='font-mono text-foreground/80'>
-              {VARIABLE_HINT.map((v) => `%${v}%`).join(' · ')}
-            </p>
-          </div>
-        </div>
-
-        {/* === PREVIEW === */}
-        <div className='flex min-h-96 flex-col gap-2 lg:min-h-0 lg:overflow-hidden'>
-          <Label className='text-xs font-medium text-muted-foreground'>
-            Live Preview
-          </Label>
-          <TemplatePreviewIframe
-            header={draft.header}
-            row={draft.row}
-            footer={draft.footer}
-            className='min-h-96 flex-1 lg:min-h-0'
+        {isDesktop ? (
+          <DesktopLayout draft={draft} update={update} isBuiltin={isBuiltin} />
+        ) : (
+          <MobileTabsLayout
+            draft={draft}
+            update={update}
+            isBuiltin={isBuiltin}
           />
-        </div>
+        )}
       </form>
 
       <SheetFooter className='border-t'>
@@ -299,6 +220,190 @@ function TemplateForm({ mode, target, onClose }: FormProps) {
         </Button>
       </SheetFooter>
     </SheetContent>
+  )
+}
+
+// ============================================================================
+// Layouts
+// ============================================================================
+
+type LayoutProps = {
+  draft: Draft
+  update: DraftUpdater
+  isBuiltin: boolean
+}
+
+function DesktopLayout({ draft, update, isBuiltin }: LayoutProps) {
+  return (
+    <div className='grid min-h-0 flex-1 grid-cols-2 gap-4 overflow-hidden px-4 py-4'>
+      <div className='flex min-h-0 flex-col gap-3 overflow-y-auto pe-2'>
+        <EditorFields draft={draft} update={update} isBuiltin={isBuiltin} />
+        <EditorTabs draft={draft} update={update} />
+        <VariablesHint />
+      </div>
+      <div className='flex min-h-0 flex-col gap-2 overflow-hidden'>
+        <Label className='text-xs font-medium text-muted-foreground'>
+          Live Preview
+        </Label>
+        <TemplatePreviewIframe
+          header={draft.header}
+          row={draft.row}
+          footer={draft.footer}
+          className='min-h-0 flex-1'
+        />
+      </div>
+    </div>
+  )
+}
+
+function MobileTabsLayout({ draft, update, isBuiltin }: LayoutProps) {
+  return (
+    <Tabs
+      defaultValue='editor'
+      className='flex min-h-0 flex-1 flex-col gap-0 overflow-hidden'
+    >
+      <div className='border-b px-4 pt-2'>
+        <TabsList className='grid w-full grid-cols-2'>
+          <TabsTrigger value='editor'>Editor</TabsTrigger>
+          <TabsTrigger value='preview'>Preview</TabsTrigger>
+        </TabsList>
+      </div>
+
+      <TabsContent
+        value='editor'
+        className='flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4'
+      >
+        <EditorFields draft={draft} update={update} isBuiltin={isBuiltin} />
+        <EditorTabs draft={draft} update={update} compact />
+        <VariablesHint />
+      </TabsContent>
+
+      <TabsContent
+        value='preview'
+        className='flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-4'
+      >
+        <TemplatePreviewIframe
+          header={draft.header}
+          row={draft.row}
+          footer={draft.footer}
+          className='min-h-0 flex-1'
+        />
+      </TabsContent>
+    </Tabs>
+  )
+}
+
+// ============================================================================
+// Editor pieces (shared)
+// ============================================================================
+
+function EditorFields({
+  draft,
+  update,
+  isBuiltin,
+}: {
+  draft: Draft
+  update: DraftUpdater
+  isBuiltin: boolean
+}) {
+  return (
+    <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+      <Field label='Name'>
+        <Input
+          value={draft.name}
+          onChange={(e) => update('name', e.target.value)}
+          placeholder='Default'
+        />
+      </Field>
+      <Field
+        label='Type'
+        hint='Identifier bebas (default, small, thermal, thermal-58, ...)'
+      >
+        <Input
+          value={draft.type}
+          onChange={(e) =>
+            update(
+              'type',
+              e.target.value
+                .toLowerCase()
+                .replace(/[^a-z0-9-]+/g, '-')
+                .replace(/^-+|-+$/g, '')
+            )
+          }
+          placeholder='default'
+          className='font-mono'
+          disabled={isBuiltin}
+        />
+      </Field>
+    </div>
+  )
+}
+
+function EditorTabs({
+  draft,
+  update,
+  compact = false,
+}: {
+  draft: Draft
+  update: DraftUpdater
+  compact?: boolean
+}) {
+  // Di compact (mobile), textarea pakai min-h-48 supaya tidak mendominasi viewport.
+  // Di desktop pakai min-h-64 + flex-1 untuk fill.
+  const textareaCls = compact
+    ? 'min-h-48 font-mono text-[11px] leading-relaxed'
+    : 'min-h-64 flex-1 font-mono text-[11px] leading-relaxed'
+
+  return (
+    <Tabs defaultValue='row' className='flex min-h-0 flex-1 flex-col gap-2'>
+      <TabsList className='w-fit'>
+        <TabsTrigger value='header'>Header</TabsTrigger>
+        <TabsTrigger value='row'>Row</TabsTrigger>
+        <TabsTrigger value='footer'>Footer</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value='header' className='flex min-h-0 flex-1 flex-col'>
+        <Textarea
+          value={draft.header}
+          onChange={(e) => update('header', e.target.value)}
+          rows={compact ? 12 : 20}
+          spellCheck={false}
+          className={textareaCls}
+          placeholder='<!DOCTYPE html><html>...<body>'
+        />
+      </TabsContent>
+      <TabsContent value='row' className='flex min-h-0 flex-1 flex-col'>
+        <Textarea
+          value={draft.row}
+          onChange={(e) => update('row', e.target.value)}
+          rows={compact ? 12 : 20}
+          spellCheck={false}
+          className={textareaCls}
+          placeholder='<table class="voucher">...</table>'
+        />
+      </TabsContent>
+      <TabsContent value='footer' className='flex min-h-0 flex-1 flex-col'>
+        <Textarea
+          value={draft.footer}
+          onChange={(e) => update('footer', e.target.value)}
+          rows={compact ? 12 : 20}
+          spellCheck={false}
+          className={textareaCls}
+          placeholder='</body></html>'
+        />
+      </TabsContent>
+    </Tabs>
+  )
+}
+
+function VariablesHint() {
+  return (
+    <div className='rounded-md border bg-muted/30 px-3 py-2 text-[10px]'>
+      <p className='mb-1 font-medium text-muted-foreground'>Variables</p>
+      <p className='font-mono leading-relaxed text-foreground/80'>
+        {VARIABLE_HINT.map((v) => `%${v}%`).join(' · ')}
+      </p>
+    </div>
   )
 }
 
