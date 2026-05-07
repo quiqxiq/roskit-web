@@ -1,5 +1,5 @@
 import { ArrowLeft, Pause, Pencil, Play, Trash2 } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
+import { Link, useParams } from '@tanstack/react-router'
 import { useTenantsStore } from '@/stores/tenants-store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,9 +10,10 @@ import { TenantStatusBadge } from './components/tenant-status-badge'
 import { TenantDialogs } from './dialogs/tenant-dialogs'
 import { useTenantsDialogStore } from './store/tenants-dialog-store'
 
-type Props = { tenantId: string }
-
-export function AdminTenantDetail({ tenantId }: Props) {
+export function AdminTenantDetail() {
+  const { tenantId } = useParams({
+    from: '/_authenticated/admin/tenants/$tenantId',
+  })
   const tenant = useTenantsStore((s) => s.items.find((t) => t.id === tenantId))
   const openDialog = useTenantsDialogStore((s) => s.open)
 

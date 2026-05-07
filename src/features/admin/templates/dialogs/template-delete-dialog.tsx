@@ -18,14 +18,29 @@ export function TemplateDeleteDialog() {
   const removeMany = useGlobalTemplatesStore((s) => s.removeMany)
 
   const isOpen = mode === 'delete' || mode === 'multi-delete'
+  const targetIsBuiltin =
+    mode === 'delete' && target?.isBuiltin === true
 
   const handleConfirm = () => {
     if (mode === 'delete' && target) {
-      remove(target.id)
-      toast.success(`Template '${target.name}' deleted`)
+      const ok = remove(target.id)
+      if (ok) {
+        toast.success(`Template '${target.name}' deleted`)
+      } else {
+        toast.error(`Built-in template '${target.name}' tidak bisa dihapus`)
+      }
     } else if (mode === 'multi-delete' && ids.length > 0) {
-      removeMany(ids)
-      toast.success(`Deleted ${ids.length} templates`)
+      const result = removeMany(ids)
+      if (result.removed > 0) {
+        toast.success(
+          `Deleted ${result.removed} template${result.removed > 1 ? 's' : ''}` +
+            (result.skipped > 0
+              ? ` · ${result.skipped} built-in dilewati`
+              : '')
+        )
+      } else {
+        toast.error('Semua template dipilih adalah built-in dan tidak bisa dihapus')
+      }
     }
     close()
   }
@@ -37,24 +52,32 @@ export function TemplateDeleteDialog() {
           <AlertDialogTitle>
             {mode === 'multi-delete'
               ? `Delete ${ids.length} templates?`
-              : 'Delete template?'}
+              : targetIsBuiltin
+                ? 'Cannot delete built-in template'
+                : 'Delete template?'}
           </AlertDialogTitle>
           <AlertDialogDescription>
             {mode === 'multi-delete'
-              ? 'Selected global templates will be removed. Existing tenants tetap punya copy lokal mereka.'
-              : target
-                ? `Template '${target.name}' will be removed. Existing tenants tetap punya copy lokal mereka.`
-                : 'This template will be removed.'}
+              ? 'Selected templates will be removed. Built-in template (Default/Small/Thermal) akan otomatis dilewati. Existing tenants tetap punya copy lokal mereka.'
+              : targetIsBuiltin
+                ? `Template '${target?.name}' adalah built-in dan tidak bisa dihapus. Gunakan tombol "Reset to default" pada drawer edit untuk mengembalikan ke source.`
+                : target
+                  ? `Template '${target.name}' will be removed. Existing tenants tetap punya copy lokal mereka.`
+                  : 'This template will be removed.'}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleConfirm}
-            className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
-          >
-            Delete
-          </AlertDialogAction>
+          <AlertDialogCancel>
+            {targetIsBuiltin ? 'OK' : 'Cancel'}
+          </AlertDialogCancel>
+          {!targetIsBuiltin && (
+            <AlertDialogAction
+              onClick={handleConfirm}
+              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+            >
+              Delete
+            </AlertDialogAction>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

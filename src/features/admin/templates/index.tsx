@@ -1,4 +1,4 @@
-import { FileText, Plus } from 'lucide-react'
+import { FileText, Lock, Plus, Sparkles } from 'lucide-react'
 import { useGlobalTemplatesStore } from '@/stores/global-templates-store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -12,9 +12,8 @@ export function AdminGlobalTemplates() {
   const openDialog = useTemplatesDialogStore((s) => s.open)
 
   const total = templates.length
-  const headerCount = templates.filter((t) => t.part === 'header').length
-  const rowCount = templates.filter((t) => t.part === 'row').length
-  const footerCount = templates.filter((t) => t.part === 'footer').length
+  const builtinCount = templates.filter((t) => t.isBuiltin).length
+  const customCount = total - builtinCount
 
   return (
     <>
@@ -25,7 +24,8 @@ export function AdminGlobalTemplates() {
               Global Default Templates
             </h2>
             <p className='text-sm text-muted-foreground sm:text-base'>
-              {total} templates · di-copy ke setiap tenant baru saat AdminCreate
+              1 template = header + row + footer · di-copy ke setiap tenant
+              baru saat AdminCreate
             </p>
           </div>
           <Button
@@ -38,11 +38,22 @@ export function AdminGlobalTemplates() {
           </Button>
         </div>
 
-        <div className='grid grid-cols-2 gap-3 md:grid-cols-4'>
-          <SummaryCard label='Total' value={total} />
-          <SummaryCard label='Header' value={headerCount} />
-          <SummaryCard label='Row' value={rowCount} />
-          <SummaryCard label='Footer' value={footerCount} />
+        <div className='grid grid-cols-1 gap-3 md:grid-cols-3'>
+          <SummaryCard
+            label='Total'
+            value={total}
+            icon={<FileText className='size-4 text-foreground' />}
+          />
+          <SummaryCard
+            label='Built-in'
+            value={builtinCount}
+            icon={<Lock className='size-4 text-blue-500' />}
+          />
+          <SummaryCard
+            label='Custom'
+            value={customCount}
+            icon={<Sparkles className='size-4 text-emerald-500' />}
+          />
         </div>
 
         <TemplatesTable data={templates} />
@@ -52,7 +63,15 @@ export function AdminGlobalTemplates() {
   )
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function SummaryCard({
+  label,
+  value,
+  icon,
+}: {
+  label: string
+  value: number
+  icon: React.ReactNode
+}) {
   return (
     <Card>
       <CardContent className='flex items-center justify-between gap-2 px-4 py-3'>
@@ -60,9 +79,7 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
           <p className='text-[11px] uppercase text-muted-foreground'>{label}</p>
           <p className='text-2xl font-bold tabular-nums'>{value}</p>
         </div>
-        <div className='rounded-full bg-muted p-2'>
-          <FileText className='size-4 text-foreground' />
-        </div>
+        <div className='rounded-full bg-muted p-2'>{icon}</div>
       </CardContent>
     </Card>
   )

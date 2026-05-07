@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   type SortingState,
   type VisibilityState,
@@ -29,7 +29,6 @@ import {
   DataTableToolbar,
   type MobileCardDetail,
 } from '@/components/data-table'
-import { partOptions, typeOptions } from '../data/schema'
 import { type PrintTemplate } from '../data/schema'
 import { useTemplatesDialogStore } from '../store/templates-dialog-store'
 import { columns } from './columns'
@@ -37,12 +36,30 @@ import { DataTableRowActions } from './data-table-row-actions'
 
 type Props = { data: PrintTemplate[] }
 
+const ORIGIN_OPTIONS = [
+  { value: 'builtin', label: 'Built-in' },
+  { value: 'custom', label: 'Custom' },
+]
+
 export function TemplatesTable({ data }: Props) {
   const openDialog = useTemplatesDialogStore((s) => s.open)
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
+
+  // Filter type di-derive dari unique values supaya custom type ikut muncul
+  const typeOptions = useMemo(() => {
+    const seen = new Set<string>()
+    const list: { value: string; label: string }[] = []
+    for (const t of data) {
+      if (!seen.has(t.type) && t.type) {
+        seen.add(t.type)
+        list.push({ value: t.type, label: t.type })
+      }
+    }
+    return list
+  }, [data])
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -79,7 +96,7 @@ export function TemplatesTable({ data }: Props) {
         searchKey='name'
         filters={[
           { columnId: 'type', title: 'Type', options: typeOptions },
-          { columnId: 'part', title: 'Part', options: partOptions },
+          { columnId: 'origin', title: 'Origin', options: ORIGIN_OPTIONS },
         ]}
       />
       <div className='hidden overflow-hidden rounded-md border md:block'>
@@ -152,7 +169,8 @@ export function TemplatesTable({ data }: Props) {
           )}
           renderMeta={(row) => (
             <span className='text-[11px] text-muted-foreground'>
-              {row.original.type} · {row.original.part}
+              {row.original.type}
+              {row.original.isBuiltin ? ' · built-in' : ' · custom'}
             </span>
           )}
           renderDetails={(row): MobileCardDetail[] => [

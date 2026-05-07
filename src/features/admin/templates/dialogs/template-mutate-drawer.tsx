@@ -1,16 +1,11 @@
 import { useState } from 'react'
+import { Lock, RotateCcw } from 'lucide-react'
 import { toast } from 'sonner'
 import { useGlobalTemplatesStore } from '@/stores/global-templates-store'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import {
   Sheet,
   SheetClose,
@@ -20,16 +15,28 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { TemplatePreviewIframe } from '../components/template-preview-iframe'
 import { emptyTemplate } from '../data/data'
-import {
-  partOptions,
-  type PrintTemplate,
-  type PrintTemplatePart,
-  type PrintTemplateType,
-  typeOptions,
-} from '../data/schema'
+import { type PrintTemplate } from '../data/schema'
 import { useTemplatesDialogStore } from '../store/templates-dialog-store'
+
+const VARIABLE_HINT = [
+  'hotspotName',
+  'username',
+  'password',
+  'price',
+  'validity',
+  'limitUptime',
+  'limitBytesTotal',
+  'qrCode',
+  'dnsName',
+  'logo',
+  'timeStamp',
+  'comment',
+  '#',
+]
 
 export function TemplateMutateDrawer() {
   const { mode, target, close } = useTemplatesDialogStore()
@@ -54,25 +61,62 @@ type FormProps = {
   onClose: () => void
 }
 
+type Draft = Pick<
+  PrintTemplate,
+  'name' | 'type' | 'header' | 'row' | 'footer' | 'isBuiltin'
+>
+
 function TemplateForm({ mode, target, onClose }: FormProps) {
   const addTemplate = useGlobalTemplatesStore((s) => s.add)
   const updateTemplate = useGlobalTemplatesStore((s) => s.update)
+  const resetToDefault = useGlobalTemplatesStore((s) => s.resetToDefault)
 
-  const [draft, setDraft] = useState(() => {
-    if (mode === 'edit' && target) return target
+  const [draft, setDraft] = useState<Draft>(() => {
+    if (mode === 'edit' && target) {
+      return {
+        name: target.name,
+        type: target.type,
+        header: target.header,
+        row: target.row,
+        footer: target.footer,
+        isBuiltin: target.isBuiltin,
+      }
+    }
+    const empty = emptyTemplate()
     return {
-      ...emptyTemplate(),
-      id: '',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    } as PrintTemplate
+      name: empty.name,
+      type: empty.type,
+      header: empty.header,
+      row: empty.row,
+      footer: empty.footer,
+      isBuiltin: false,
+    }
   })
 
-  const update = <K extends keyof PrintTemplate>(
-    key: K,
-    value: PrintTemplate[K]
-  ) => {
+  const update = <K extends keyof Draft>(key: K, value: Draft[K]) => {
     setDraft((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const handleResetToDefault = () => {
+    if (!target || !target.isBuiltin) return
+    const ok = resetToDefault(target.id)
+    if (ok) {
+      // ambil ulang state hasil reset dari store
+      const fresh = useGlobalTemplatesStore
+        .getState()
+        .items.find((t) => t.id === target.id)
+      if (fresh) {
+        setDraft({
+          name: fresh.name,
+          type: fresh.type,
+          header: fresh.header,
+          row: fresh.row,
+          footer: fresh.footer,
+          isBuiltin: fresh.isBuiltin,
+        })
+      }
+      toast.success(`'${target.name}' di-reset ke default`)
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -81,97 +125,170 @@ function TemplateForm({ mode, target, onClose }: FormProps) {
       toast.error('Template name is required')
       return
     }
-    if (!draft.content.trim()) {
-      toast.error('Content is required')
+    if (!draft.type.trim()) {
+      toast.error('Type is required')
+      return
+    }
+    if (!draft.row.trim()) {
+      toast.error('Row content is required')
       return
     }
     if (mode === 'add') {
       const id = `g-${Date.now().toString(36).slice(-6)}`
       const now = new Date()
-      addTemplate({ ...draft, id, tenantId: null, createdAt: now, updatedAt: now })
+      addTemplate({
+        ...draft,
+        id,
+        tenantId: null,
+        isBuiltin: false,
+        createdAt: now,
+        updatedAt: now,
+      })
       toast.success(`Global template '${draft.name}' added`)
     } else if (mode === 'edit' && target) {
-      updateTemplate(target.id, draft)
+      updateTemplate(target.id, {
+        name: draft.name,
+        type: draft.type,
+        header: draft.header,
+        row: draft.row,
+        footer: draft.footer,
+      })
       toast.success(`Template '${draft.name}' updated`)
     }
     onClose()
   }
 
+  const isBuiltin = mode === 'edit' && target?.isBuiltin === true
+
   return (
-    <SheetContent className='flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl'>
+    <SheetContent className='flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-5xl'>
       <SheetHeader className='border-b'>
-        <SheetTitle>
+        <SheetTitle className='flex items-center gap-2'>
           {mode === 'add' ? 'Add Global Template' : 'Edit Template'}
+          {isBuiltin && (
+            <Badge variant='outline' className='gap-1 text-[10px]'>
+              <Lock className='size-3' />
+              Built-in
+            </Badge>
+          )}
         </SheetTitle>
         <SheetDescription>
-          Global default · di-copy ke setiap tenant baru saat AdminCreate.
+          1 template = header + row + footer. Built-in template di-copy ke
+          tenant baru saat AdminCreate. Preview live di kanan (iframe sandbox).
         </SheetDescription>
       </SheetHeader>
 
       <form
         id='template-form'
-        className='flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4'
+        className='flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4 lg:grid lg:grid-cols-2 lg:gap-4 lg:overflow-hidden'
         onSubmit={handleSubmit}
       >
-        <div className='grid grid-cols-1 gap-3 md:grid-cols-3'>
-          <Field label='Name'>
-            <Input
-              value={draft.name}
-              onChange={(e) => update('name', e.target.value)}
-              placeholder='Default · Header'
-            />
-          </Field>
-          <Field label='Type'>
-            <Select
-              value={draft.type}
-              onValueChange={(v) => update('type', v as PrintTemplateType)}
+        {/* === EDITOR === */}
+        <div className='flex min-h-0 flex-col gap-3 lg:overflow-y-auto lg:pe-2'>
+          <div className='grid grid-cols-1 gap-3 sm:grid-cols-2'>
+            <Field label='Name'>
+              <Input
+                value={draft.name}
+                onChange={(e) => update('name', e.target.value)}
+                placeholder='Default'
+              />
+            </Field>
+            <Field
+              label='Type'
+              hint='Identifier bebas (default, small, thermal, thermal-58, ...)'
             >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {typeOptions.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label='Part'>
-            <Select
-              value={draft.part}
-              onValueChange={(v) => update('part', v as PrintTemplatePart)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {partOptions.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>
-                    {o.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
+              <Input
+                value={draft.type}
+                onChange={(e) =>
+                  update(
+                    'type',
+                    e.target.value
+                      .toLowerCase()
+                      .replace(/[^a-z0-9-]+/g, '-')
+                      .replace(/^-+|-+$/g, '')
+                  )
+                }
+                placeholder='default'
+                className='font-mono'
+                disabled={isBuiltin}
+              />
+            </Field>
+          </div>
+
+          <Tabs defaultValue='row' className='flex min-h-0 flex-1 flex-col gap-2'>
+            <TabsList className='w-fit'>
+              <TabsTrigger value='header'>Header</TabsTrigger>
+              <TabsTrigger value='row'>Row</TabsTrigger>
+              <TabsTrigger value='footer'>Footer</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value='header' className='flex min-h-0 flex-1 flex-col'>
+              <Textarea
+                value={draft.header}
+                onChange={(e) => update('header', e.target.value)}
+                rows={20}
+                spellCheck={false}
+                className='flex-1 min-h-64 font-mono text-[11px] leading-relaxed'
+                placeholder='<!DOCTYPE html><html>...<body>'
+              />
+            </TabsContent>
+            <TabsContent value='row' className='flex min-h-0 flex-1 flex-col'>
+              <Textarea
+                value={draft.row}
+                onChange={(e) => update('row', e.target.value)}
+                rows={20}
+                spellCheck={false}
+                className='flex-1 min-h-64 font-mono text-[11px] leading-relaxed'
+                placeholder='<table class="voucher">...</table>'
+              />
+            </TabsContent>
+            <TabsContent value='footer' className='flex min-h-0 flex-1 flex-col'>
+              <Textarea
+                value={draft.footer}
+                onChange={(e) => update('footer', e.target.value)}
+                rows={20}
+                spellCheck={false}
+                className='flex-1 min-h-64 font-mono text-[11px] leading-relaxed'
+                placeholder='</body></html>'
+              />
+            </TabsContent>
+          </Tabs>
+
+          <div className='rounded-md border bg-muted/30 px-3 py-2 text-[10px]'>
+            <p className='mb-1 font-medium text-muted-foreground'>Variables</p>
+            <p className='font-mono text-foreground/80'>
+              {VARIABLE_HINT.map((v) => `%${v}%`).join(' · ')}
+            </p>
+          </div>
         </div>
-        <Field
-          label='Content (HTML)'
-          hint='Variables: {{Username}}, {{Password}}, {{Profile}}, {{Price}}, {{Currency}}, {{HotspotName}}, {{DNSName}}, {{Phone}}, {{QRImageUrl}}, {{GeneratedAt}}'
-        >
-          <Textarea
-            value={draft.content}
-            onChange={(e) => update('content', e.target.value)}
-            rows={18}
-            spellCheck={false}
-            className='font-mono text-[11px]'
-            placeholder='<div>...</div>'
+
+        {/* === PREVIEW === */}
+        <div className='flex min-h-96 flex-col gap-2 lg:min-h-0 lg:overflow-hidden'>
+          <Label className='text-xs font-medium text-muted-foreground'>
+            Live Preview
+          </Label>
+          <TemplatePreviewIframe
+            header={draft.header}
+            row={draft.row}
+            footer={draft.footer}
+            className='min-h-96 flex-1 lg:min-h-0'
           />
-        </Field>
+        </div>
       </form>
 
       <SheetFooter className='border-t'>
+        {isBuiltin && (
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            className='me-auto gap-1.5'
+            onClick={handleResetToDefault}
+          >
+            <RotateCcw className='size-3.5' />
+            Reset to default
+          </Button>
+        )}
         <SheetClose asChild>
           <Button variant='outline' size='sm'>
             Cancel

@@ -1,6 +1,7 @@
 import { type ColumnDef } from '@tanstack/react-table'
-import { Checkbox } from '@/components/ui/checkbox'
+import { Lock } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { type PrintTemplate } from '../data/schema'
 import { DataTableRowActions } from './data-table-row-actions'
@@ -14,12 +15,6 @@ function formatDateTime(d: Date | string): string {
     hour: '2-digit',
     minute: '2-digit',
   })
-}
-
-const partVariant: Record<string, string> = {
-  header: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
-  row: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
-  footer: 'bg-violet-500/10 text-violet-700 dark:text-violet-400',
 }
 
 export const columns: ColumnDef<PrintTemplate>[] = [
@@ -53,7 +48,12 @@ export const columns: ColumnDef<PrintTemplate>[] = [
       <DataTableColumnHeader column={column} title='Name' />
     ),
     cell: ({ row }) => (
-      <span className='font-semibold'>{row.original.name}</span>
+      <div className='flex items-center gap-2'>
+        <span className='font-semibold'>{row.original.name}</span>
+        {row.original.isBuiltin && (
+          <Lock className='size-3 text-muted-foreground' />
+        )}
+      </div>
     ),
     enableHiding: false,
   },
@@ -63,25 +63,31 @@ export const columns: ColumnDef<PrintTemplate>[] = [
       <DataTableColumnHeader column={column} title='Type' />
     ),
     cell: ({ row }) => (
-      <Badge variant='outline' className='capitalize'>
+      <Badge variant='outline' className='font-mono lowercase'>
         {row.original.type}
       </Badge>
     ),
     filterFn: (row, id, value) => value.includes(row.getValue(id)),
   },
   {
-    accessorKey: 'part',
+    id: 'origin',
+    accessorFn: (row) => (row.isBuiltin ? 'builtin' : 'custom'),
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Part' />
+      <DataTableColumnHeader column={column} title='Origin' />
     ),
-    cell: ({ row }) => (
-      <Badge
-        variant='outline'
-        className={`border-transparent capitalize ${partVariant[row.original.part] ?? ''}`}
-      >
-        {row.original.part}
-      </Badge>
-    ),
+    cell: ({ row }) =>
+      row.original.isBuiltin ? (
+        <Badge
+          variant='outline'
+          className='border-transparent bg-blue-500/10 text-blue-700 dark:text-blue-400'
+        >
+          Built-in
+        </Badge>
+      ) : (
+        <Badge variant='outline' className='border-transparent bg-muted'>
+          Custom
+        </Badge>
+      ),
     filterFn: (row, id, value) => value.includes(row.getValue(id)),
   },
   {
