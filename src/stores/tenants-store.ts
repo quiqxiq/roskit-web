@@ -1,3 +1,11 @@
+/**
+ * @deprecated Server state should not live in Zustand. Replace usage with
+ * `useAdminTenants` (TanStack Query) once
+ * `features/admin/tenants/api/queries.ts` is wired into the components.
+ * Backend endpoints: `/admin/tenants/*` (superadmin only).
+ * Seed in `data/data.ts` remains valid for Storybook / unit tests.
+ * See `web/docs/API_INTEGRATION_PLAN.md` §B.2.
+ */
 import { create } from 'zustand'
 import { tenantsSeed } from '@/features/admin/tenants/data/data'
 import { type Tenant } from '@/features/admin/tenants/data/schema'

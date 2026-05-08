@@ -1,0 +1,71 @@
+// Shared API response types.
+//
+// Source of truth: docs/openapi/components/schemas/common.yaml
+// Backend implementation: pkg/httpresp/respond.go
+
+/**
+ * Stable error envelope returned by the backend on every failure.
+ * `code` is a machine-readable identifier (e.g. `invalid_input`).
+ * `message` is human-readable English suitable for direct display.
+ * `details` is an optional structured payload (e.g. per-field errors).
+ */
+export type APIError = {
+  code: string
+  message: string
+  details?: unknown
+}
+
+/**
+ * Universal response shape. Exactly one of `data` / `error` is non-null.
+ */
+export type Envelope<T> = {
+  data: T | null
+  error: APIError | null
+}
+
+/**
+ * Pagination metadata. Match `PaginationMeta` schema (total/page/limit).
+ * Note: backend returns `limit`, not `per_page`, and does not return
+ * `total_pages` — compute on client when needed.
+ */
+export type PaginationMeta = {
+  total: number
+  page: number
+  limit: number
+}
+
+export type Paginated<T> = {
+  items: T[]
+  meta: PaginationMeta
+}
+
+/**
+ * Generic count-style response: `GET .../count` returns `{ count }`.
+ */
+export type CountResponse = { count: number }
+
+/**
+ * Shape of POST add-style responses: `{ data: { id }, error: null }`.
+ * Used by RouterOS-backed endpoints that return only the new RouterOS
+ * `.id` (e.g. `*42`) on creation.
+ */
+export type AddResult = { id: string }
+
+/**
+ * Shape of mutation responses that return only a status message:
+ * `{ data: { message }, error: null }`.
+ */
+export type MessageResult = { message: string }
+
+/**
+ * Raw RouterOS sentence record. Most hotspot/ppp/network endpoints return
+ * arrays of these — a `name → value` map keyed by hyphenated MikroTik
+ * field names (e.g. `mac-address`, `bytes-in`). The `.id` field is always
+ * present and starts with `*` (e.g. `*A1`).
+ *
+ * Keep as `Record<string, string>` because the underlying RouterOS API is
+ * untyped and can return arbitrary keys depending on RouterOS version.
+ * Per-domain Zod schemas in `features/<domain>/api/schema.ts` document the
+ * common keys via `.passthrough()` for forward compatibility.
+ */
+export type RouterOSRecord = Record<string, string>

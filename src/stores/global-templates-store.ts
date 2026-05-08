@@ -1,3 +1,11 @@
+/**
+ * @deprecated Server state should not live in Zustand. Replace usage with
+ * `useTemplates` (TanStack Query) once
+ * `features/admin/templates/api/queries.ts` is wired into the components.
+ * Backend endpoints: `/templates/*` (tenant) + `/admin/templates/*` (global).
+ * Seed in `data/data.ts` and `data/builtin-defaults.ts` remain valid for
+ * Storybook / unit tests. See `web/docs/API_INTEGRATION_PLAN.md` §B.2.
+ */
 import { create } from 'zustand'
 import { BUILTIN_TEMPLATES } from '@/features/admin/templates/data/builtin-defaults'
 import { globalTemplatesSeed } from '@/features/admin/templates/data/data'

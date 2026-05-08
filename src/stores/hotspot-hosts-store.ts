@@ -1,3 +1,10 @@
+/**
+ * @deprecated Server state should not live in Zustand. Replace usage with
+ * `useHotspotHosts` (TanStack Query) once
+ * `features/hotspot/hosts/api/queries.ts` is wired into the components.
+ * Seed in `data/data.ts` remains valid for Storybook / unit tests.
+ * See `web/docs/API_INTEGRATION_PLAN.md` §B.2.
+ */
 import { create } from 'zustand'
 import { hotspotHostsSeed } from '@/features/hotspot/hosts/data/data'
 import { type HotspotHost } from '@/features/hotspot/hosts/data/schema'

@@ -59,12 +59,15 @@ export function UserAuthForm({
       success: () => {
         setIsLoading(false)
 
-        // Mock successful authentication with expiry computed at success time
+        // Mock successful authentication. Shape mirrors AuthUser
+        // (docs/openapi/components/schemas/auth.yaml#/UserView). Real
+        // wiring will happen via useLogin in features/auth/api/queries.ts.
         const mockUser = {
-          accountNo: 'ACC001',
-          email: data.email,
-          role: ['user'],
-          exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
+          id: 1,
+          username: data.email.split('@')[0] || 'user',
+          role: 'admin' as const,
+          tenant_id: 1,
+          tenant_slug: 'default',
         }
 
         // Set user and access token

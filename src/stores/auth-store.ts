@@ -3,11 +3,17 @@ import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
 
 const ACCESS_TOKEN = 'thisisjustarandomstring'
 
-interface AuthUser {
-  accountNo: string
-  email: string
-  role: string[]
-  exp: number
+// Match docs/openapi/components/schemas/auth.yaml#/UserRole
+export type UserRole = 'owner' | 'admin' | 'staff' | 'superadmin'
+
+// Match docs/openapi/components/schemas/auth.yaml#/UserView
+// `tenant_id` is null for superadmins (cross-tenant operators).
+export interface AuthUser {
+  id: number
+  username: string
+  role: UserRole
+  tenant_id: number | null
+  tenant_slug: string
 }
 
 interface AuthState {

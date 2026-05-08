@@ -1,3 +1,11 @@
+/**
+ * @deprecated Server state should not live in Zustand. Replace usage with
+ * `useQuickPrintPackages` (TanStack Query) once
+ * `features/voucher/print/api/queries.ts` is wired into the components.
+ * Backend endpoint: `GET/POST/PUT/DELETE /routers/{routerId}/quick-print`.
+ * Seed in `data/data.ts` remains valid for Storybook / unit tests.
+ * See `web/docs/API_INTEGRATION_PLAN.md` §B.2.
+ */
 import { create } from 'zustand'
 import { quickPrintPresetsSeed } from '@/features/voucher/print/data/data'
 import { type QuickPrintPreset } from '@/features/voucher/print/data/schema'

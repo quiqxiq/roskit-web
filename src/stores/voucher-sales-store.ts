@@ -1,3 +1,11 @@
+/**
+ * @deprecated Server state should not live in Zustand. Replace usage with
+ * `useVoucherSales` (TanStack Query, sourced from the reports endpoint —
+ * `GET /routers/{routerId}/reports/...`) once
+ * `features/voucher/sales/api/queries.ts` is wired into the components.
+ * Seed in `features/voucher/data/sales.ts` remains valid for Storybook /
+ * unit tests. See `web/docs/API_INTEGRATION_PLAN.md` §B.2.
+ */
 import { create } from 'zustand'
 import {
   voucherSalesSeed,
