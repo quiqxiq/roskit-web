@@ -10,8 +10,6 @@ const sampleUser = {
   id: 12,
   username: 'alice',
   role: 'admin' as const,
-  tenant_id: 3,
-  tenant_slug: 'acme',
 }
 
 describe('useAuthStore', () => {

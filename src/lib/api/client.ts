@@ -1,8 +1,4 @@
 import axios, { type AxiosInstance } from 'axios'
-import {
-  PLATFORM_TENANT_SLUG,
-  useActiveTenantStore,
-} from '@/stores/active-tenant-store'
 import { useAuthStore } from '@/stores/auth-store'
 
 // `VITE_API_URL` should point to the backend host (no `/api/v1` suffix).
@@ -17,21 +13,12 @@ export const apiClient: AxiosInstance = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-// Inject auth + tenant scope on every request.
+// Inject auth on every request. Backend is single-tenant — no tenant scoping.
 apiClient.interceptors.request.use((config) => {
   const token = useAuthStore.getState().auth.accessToken
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
-
-  // Only forward an explicit tenant header when the user is operating outside
-  // the platform scope. For superadmins on `__platform__`, we send no header
-  // and let the backend resolve from JWT claims.
-  const slug = useActiveTenantStore.getState().slug
-  if (slug && slug !== PLATFORM_TENANT_SLUG) {
-    config.headers['X-Tenant-Slug'] = slug
-  }
-
   return config
 })
 

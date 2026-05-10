@@ -63,11 +63,11 @@ export async function changePassword(
   )
 }
 
-// POST /auth/setup — bootstrap the first tenant + owner. Only callable
-// when the users table is empty; subsequent calls return 403.
-export async function setupFirstTenant(
-  payload: SetupRequest,
-): Promise<SetupResult> {
+// POST /auth/setup — bootstrap the first admin user. Only callable when
+// the users table is empty; subsequent calls return 403 ("setup already
+// completed"). Backend auto-issues tokens after creation, so the SPA is
+// logged in immediately on success.
+export async function setup(payload: SetupRequest): Promise<SetupResult> {
   const res = await apiClient.post<Envelope<SetupResult>>(
     '/auth/setup',
     payload,

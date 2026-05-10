@@ -3,17 +3,16 @@ import { getCookie, setCookie, removeCookie } from '@/lib/cookies'
 
 const ACCESS_TOKEN = 'thisisjustarandomstring'
 
-// Match docs/openapi/components/schemas/auth.yaml#/UserRole
-export type UserRole = 'owner' | 'admin' | 'staff' | 'superadmin'
+// Match internal/models/user.go#/UserRole — backend is single-tenant
+// and only supports two roles.
+export type UserRole = 'admin' | 'staff'
 
-// Match docs/openapi/components/schemas/auth.yaml#/UserView
-// `tenant_id` is null for superadmins (cross-tenant operators).
+// Match internal/services/auth_service.go#/UserView — the shape returned
+// by /auth/me and embedded in /auth/login responses.
 export interface AuthUser {
   id: number
   username: string
   role: UserRole
-  tenant_id: number | null
-  tenant_slug: string
 }
 
 interface AuthState {

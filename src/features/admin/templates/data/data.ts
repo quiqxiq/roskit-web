@@ -6,7 +6,6 @@ const SEED_TS = new Date('2025-01-01T00:00:00.000Z')
 export const globalTemplatesSeed: PrintTemplate[] = BUILTIN_TEMPLATES.map(
   (b) => ({
     id: b.id,
-    tenantId: null,
     name: b.name,
     type: b.type,
     isBuiltin: true,
@@ -23,7 +22,6 @@ export function emptyTemplate(): Omit<
   'id' | 'createdAt' | 'updatedAt'
 > {
   return {
-    tenantId: null,
     name: '',
     type: '',
     isBuiltin: false,

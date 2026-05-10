@@ -142,7 +142,6 @@ function TemplateForm({ mode, target, onClose }: FormProps) {
       addTemplate({
         ...draft,
         id,
-        tenantId: null,
         isBuiltin: false,
         createdAt: now,
         updatedAt: now,

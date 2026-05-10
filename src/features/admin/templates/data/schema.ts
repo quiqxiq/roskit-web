@@ -8,7 +8,6 @@
 
 export type PrintTemplate = {
   id: string
-  tenantId: string | null
   name: string
   type: string
   isBuiltin: boolean

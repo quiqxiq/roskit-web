@@ -3,7 +3,6 @@ import {
   BarChart2,
   Bell,
   Bug,
-  Building2,
   Construction,
   FileText,
   FileX,
@@ -15,7 +14,6 @@ import {
   Monitor,
   Package,
   Palette,
-  Printer,
   Server,
   ServerOff,
   Settings,
@@ -102,21 +100,6 @@ export const sidebarData: SidebarData = {
             { title: 'Daily', url: '/report/daily' },
             { title: 'Monthly', url: '/report/monthly' },
           ],
-        },
-      ],
-    },
-    {
-      title: 'Platform',
-      items: [
-        {
-          title: 'Tenants',
-          url: '/admin/tenants',
-          icon: Building2,
-        },
-        {
-          title: 'Global Templates',
-          url: '/admin/templates',
-          icon: Printer,
         },
       ],
     },

@@ -21,15 +21,9 @@ export const qk = {
   userStatus: (router: string, mac: string) =>
     ['status', router, mac] as const,
 
-  // ────────────────────────── admin · tenants ──────────────────────────
-  adminTenants: (filters?: QKFilters) =>
-    ['admin', 'tenants', filters ?? {}] as const,
-  adminTenant: (id: string) => ['admin', 'tenants', id] as const,
-
-  // ────────────────────────── tenant · self ──────────────────────────
-  tenantSelf: () => ['tenant', 'self'] as const,
-  tenantSettings: () => ['tenant', 'settings'] as const,
-  tenantLogo: () => ['tenant', 'logo'] as const,
+  // ────────────────────────── settings (admin, global singleton) ──────────────────────────
+  settings: () => ['settings'] as const,
+  settingsLogo: () => ['settings', 'logo'] as const,
 
   // ────────────────────────── users ──────────────────────────
   users: (filters?: QKFilters) => ['users', filters ?? {}] as const,

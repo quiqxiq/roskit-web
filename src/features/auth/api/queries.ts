@@ -4,10 +4,6 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 import { qk } from '@/lib/api/query-keys'
-import {
-  PLATFORM_TENANT_SLUG,
-  useActiveTenantStore,
-} from '@/stores/active-tenant-store'
 import { useAuthStore, type AuthUser } from '@/stores/auth-store'
 import type {
   ChangePasswordRequest,
@@ -22,30 +18,19 @@ import {
   getMe,
   login,
   logout,
-  setupFirstTenant,
+  setup,
 } from './service'
 
-// After a successful login or first-tenant setup, hydrate both stores.
-// - auth-store: persist token + identity
-// - active-tenant-store: scope tenant for subsequent X-Tenant-Slug header.
-//   Superadmins (tenant_id === null) stay on PLATFORM_TENANT_SLUG so the
-//   client interceptor omits the header.
+// After a successful login or first-admin setup, persist token + identity.
+// Backend is single-tenant — no tenant scope to track separately.
 function hydrateSession(token: string, user: AuthUser): void {
   const auth = useAuthStore.getState().auth
   auth.setAccessToken(token)
   auth.setUser(user)
-
-  const tenantStore = useActiveTenantStore.getState()
-  if (user.role === 'superadmin' || user.tenant_id === null) {
-    tenantStore.resetToPlatform()
-  } else {
-    tenantStore.setSlug(user.tenant_slug)
-  }
 }
 
 function clearSession(): void {
   useAuthStore.getState().auth.reset()
-  useActiveTenantStore.getState().resetToPlatform()
 }
 
 // ────────────────────── Mutations ──────────────────────
@@ -84,29 +69,16 @@ export function useChangePassword() {
   })
 }
 
-export function useSetupFirstTenant() {
+// Bootstrap the first admin user (only succeeds when users table is empty).
+// Backend auto-issues tokens, so the SPA is immediately authenticated
+// without a second /auth/login call.
+export function useSetup() {
   const qc = useQueryClient()
   return useMutation<SetupResult, Error, SetupRequest>({
-    mutationFn: (payload) => setupFirstTenant(payload),
+    mutationFn: (payload) => setup(payload),
     onSuccess: (data) => {
-      // Backend auto-issues tokens for the new owner. Hydrate so the SPA
-      // is immediately authenticated without a second /auth/login call.
-      const user: AuthUser = {
-        id: data.user.id,
-        username: data.user.username,
-        role: data.user.role,
-        tenant_id: data.tenant.id,
-        tenant_slug: data.tenant.slug,
-      }
-      hydrateSession(data.access_token, user)
-      qc.setQueryData(qk.currentUser(), user)
-
-      // The user just created their tenant — scope subsequent reads to it.
-      // (hydrateSession already handles this for non-superadmin roles, but
-      // explicit is clearer here since `setup` is always for an owner.)
-      if (data.tenant.slug !== PLATFORM_TENANT_SLUG) {
-        useActiveTenantStore.getState().setSlug(data.tenant.slug)
-      }
+      hydrateSession(data.access_token, data.user)
+      qc.setQueryData(qk.currentUser(), data.user)
     },
   })
 }

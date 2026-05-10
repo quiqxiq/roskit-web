@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Loader2, Lock, LogIn, Mail } from 'lucide-react'
+import { Loader2, Lock, LogIn, User } from 'lucide-react'
 import { toast } from 'sonner'
 import { IconFacebook, IconGithub } from '@/assets/brand-icons'
 import { useAuthStore } from '@/stores/auth-store'
@@ -21,9 +21,10 @@ import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 
 const formSchema = z.object({
-  email: z.email({
-    error: (iss) => (iss.input === '' ? 'Please enter your email.' : undefined),
-  }),
+  username: z
+    .string()
+    .min(1, 'Please enter your username.')
+    .max(64, 'Username is too long.'),
   password: z
     .string()
     .min(1, 'Please enter your password.')
@@ -46,7 +47,7 @@ export function UserAuthForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      username: '',
       password: '',
     },
   })
@@ -59,15 +60,13 @@ export function UserAuthForm({
       success: () => {
         setIsLoading(false)
 
-        // Mock successful authentication. Shape mirrors AuthUser
-        // (docs/openapi/components/schemas/auth.yaml#/UserView). Real
-        // wiring will happen via useLogin in features/auth/api/queries.ts.
+        // Mock successful authentication. Shape mirrors AuthUser from
+        // internal/services/auth_service.go#/UserView. Real wiring will
+        // happen via useLogin in features/auth/api/queries.ts.
         const mockUser = {
           id: 1,
-          username: data.email.split('@')[0] || 'user',
+          username: data.username,
           role: 'admin' as const,
-          tenant_id: 1,
-          tenant_slug: 'default',
         }
 
         // Set user and access token
@@ -78,7 +77,7 @@ export function UserAuthForm({
         const targetPath = redirectTo || '/'
         navigate({ to: targetPath, replace: true })
 
-        return `Welcome back, ${data.email}!`
+        return `Welcome back, ${data.username}!`
       },
       error: 'Error',
     })
@@ -93,16 +92,17 @@ export function UserAuthForm({
       >
         <FormField
           control={form.control}
-          name='email'
+          name='username'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Username</FormLabel>
               <FormControl>
                 <div className='relative'>
-                  <Mail className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
+                  <User className='absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground' />
                   <Input
-                    placeholder='name@example.com'
+                    placeholder='admin'
                     className='pl-9'
+                    autoComplete='username'
                     {...field}
                   />
                 </div>
