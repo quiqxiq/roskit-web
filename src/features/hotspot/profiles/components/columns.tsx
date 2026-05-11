@@ -4,10 +4,20 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { expModeLabels, formatIDR } from '../data/data'
-import { type HotspotProfile } from '../data/schema'
+import { type ExpMode } from '../data/schema'
+import { type HotspotProfileViewModel } from './view-model'
 import { DataTableRowActions } from './data-table-row-actions'
 
-export const columns: ColumnDef<HotspotProfile>[] = [
+// Pretty-print the `exp_mode` field. The API returns it as a free-form
+// string per RouterOS, but in practice it's one of the documented
+// values — fall back to the raw value when it's unrecognised.
+function labelForExpMode(value: string): string {
+  return value in expModeLabels
+    ? expModeLabels[value as ExpMode]
+    : value || '—'
+}
+
+export const columns: ColumnDef<HotspotProfileViewModel>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -60,7 +70,7 @@ export const columns: ColumnDef<HotspotProfile>[] = [
       <DataTableColumnHeader column={column} title='Shared' />
     ),
     cell: ({ row }) => (
-      <span className='font-mono text-sm'>{row.getValue('sharedUsers')}</span>
+      <span className='font-mono text-sm'>{row.original.sharedUsers || '—'}</span>
     ),
   },
   {
@@ -69,7 +79,7 @@ export const columns: ColumnDef<HotspotProfile>[] = [
       <DataTableColumnHeader column={column} title='Rate Limit' />
     ),
     cell: ({ row }) => (
-      <span className='font-mono text-sm'>{row.getValue('rateLimit')}</span>
+      <span className='font-mono text-sm'>{row.original.rateLimit || '—'}</span>
     ),
   },
   {
@@ -77,14 +87,11 @@ export const columns: ColumnDef<HotspotProfile>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Exp Mode' />
     ),
-    cell: ({ row }) => {
-      const mode = row.original.expMode
-      return (
-        <Badge variant='outline' className='font-normal'>
-          {expModeLabels[mode]}
-        </Badge>
-      )
-    },
+    cell: ({ row }) => (
+      <Badge variant='outline' className='font-normal'>
+        {labelForExpMode(row.original.expMode)}
+      </Badge>
+    ),
     filterFn: (row, id, value) => value.includes(row.getValue(id)),
   },
   {
@@ -93,7 +100,7 @@ export const columns: ColumnDef<HotspotProfile>[] = [
       <DataTableColumnHeader column={column} title='Validity' />
     ),
     cell: ({ row }) => (
-      <span className='font-mono text-sm'>{row.getValue('validity')}</span>
+      <span className='font-mono text-sm'>{row.original.validity || '—'}</span>
     ),
   },
   {

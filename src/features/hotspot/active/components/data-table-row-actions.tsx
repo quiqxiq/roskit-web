@@ -1,7 +1,8 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
-import { Copy, Power, UserCircle } from 'lucide-react'
+import { Copy, Power, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { useActiveRouterId } from '@/stores/active-router-store'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -10,24 +11,40 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { type HotspotActive } from '../data/schema'
+import { useRemoveHotspotActive } from '../api/queries'
 import { useActiveDialogStore } from '../store/active-dialog-store'
+import { type HotspotActiveViewModel } from './view-model'
 
 type DataTableRowActionsProps = {
-  row: Row<HotspotActive>
+  row: Row<HotspotActiveViewModel>
 }
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const session = row.original
   const openDialog = useActiveDialogStore((s) => s.open)
+  const routerId = useActiveRouterId() ?? 0
+  const removeMutation = useRemoveHotspotActive(routerId)
 
   const handleDisconnect = () => {
     openDialog('disconnect', { target: session })
   }
 
-  const handleViewUser = () => {
-    toast.info('View User', {
-      description: `Open user detail for ${session.user}`,
+  // "Remove session" drops the session WITHOUT clearing the captive
+  // portal cookie, so the user can re-auth silently. "Disconnect"
+  // (above) clears the cookie via the dedicated endpoint and forces a
+  // re-login.
+  const handleRemoveSession = () => {
+    removeMutation.mutate(session.id, {
+      onSuccess: () => {
+        toast.success(`Session for ${session.user} removed`, {
+          description: 'Cookie preserved — user can re-auth silently.',
+        })
+      },
+      onError: (err) => {
+        toast.error('Failed to remove session', {
+          description: err instanceof Error ? err.message : String(err),
+        })
+      },
     })
   }
 
@@ -49,14 +66,20 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           <span className='sr-only'>Open menu</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align='end' className='w-44'>
-        <DropdownMenuItem onClick={handleViewUser}>
-          <UserCircle className='size-4' />
-          View User
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleCopyMac}>
+      <DropdownMenuContent align='end' className='w-48'>
+        <DropdownMenuItem
+          onClick={handleCopyMac}
+          disabled={!session.macAddress}
+        >
           <Copy className='size-4' />
           Copy MAC
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={handleRemoveSession}
+          disabled={removeMutation.isPending}
+        >
+          <X className='size-4' />
+          Remove (keep cookie)
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleDisconnect} className='text-red-500!'>

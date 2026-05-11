@@ -8,8 +8,8 @@ import {
   YAxis,
 } from 'recharts'
 import { formatIDR } from '@/lib/format'
-import { SHORT_MONTH_NAMES } from '../data/data'
-import { type YearlySummaryRow } from '../data/schema'
+import { SHORT_MONTH_NAMES } from '../../_shared/format'
+import { type YearlySummaryRow } from '../index'
 
 type YearlyResumeChartProps = {
   rows: YearlySummaryRow[]

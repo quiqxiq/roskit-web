@@ -1,7 +1,14 @@
 import { useMemo, useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useHotspotProfilesStore } from '@/stores/hotspot-profiles-store'
-import { useQuickPrintPresetsStore } from '@/stores/quick-print-presets-store'
+import {
+  useCreateQuickPrintPackage,
+  useUpdateQuickPrintPackage,
+} from '@/features/voucher/print/api/queries'
+import { useHotspotProfiles } from '@/features/hotspot/profiles/api/queries'
+import { parseRouterOSNumber } from '@/features/hotspot/_shared/format'
+import { useActiveRouterId } from '@/stores/active-router-store'
+import { useQuickPrintPresetsMetaStore } from '@/stores/quick-print-presets-meta-store'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,6 +35,7 @@ import {
   type PresetColor,
   type QuickPrintPreset,
 } from '../data/schema'
+import { presetToApi } from '../lib/preset-mapping'
 import { usePresetsDialogStore } from '../store/presets-dialog-store'
 
 const COLOR_OPTIONS: PresetColor[] = [
@@ -105,9 +113,27 @@ type PresetFormProps = {
 }
 
 function PresetForm({ mode, target, onClose }: PresetFormProps) {
-  const profiles = useHotspotProfilesStore((s) => s.items)
-  const addPreset = useQuickPrintPresetsStore((s) => s.add)
-  const updatePreset = useQuickPrintPresetsStore((s) => s.update)
+  const routerId = useActiveRouterId()
+  // Live profiles list — used to populate the picker and to auto-fill
+  // pricing/validity when the user picks a profile. The pricing fields
+  // are RouterOS strings; we parse them to numbers at sync time.
+  // Wrapped in useMemo so the `?? []` fallback keeps a stable reference
+  // when the query has no data yet, otherwise downstream useMemos
+  // re-run every render.
+  const profilesQuery = useHotspotProfiles(routerId ?? 0)
+  const profiles = useMemo(
+    () => profilesQuery.data ?? [],
+    [profilesQuery.data],
+  )
+  const setMeta = useQuickPrintPresetsMetaStore((s) => s.set)
+  const renameMeta = useQuickPrintPresetsMetaStore((s) => s.rename)
+
+  // The drawer is rendered only when a router is selected (the parent
+  // page gates this), but we still pass `0` defensively so the hooks
+  // satisfy their `enabled` guard either way.
+  const createMutation = useCreateQuickPrintPackage(routerId ?? 0)
+  const updateMutation = useUpdateQuickPrintPackage(routerId ?? 0)
+  const isPending = createMutation.isPending || updateMutation.isPending
 
   const profileFallback = profiles[0]?.name ?? ''
   const [draft, setDraft] = useState<QuickPrintPreset>(() => {
@@ -133,8 +159,10 @@ function PresetForm({ mode, target, onClose }: PresetFormProps) {
       ...prev,
       profile: name,
       validity: p?.validity ?? prev.validity,
-      price: p?.price ?? prev.price,
-      sellingPrice: p?.sellingPrice ?? prev.sellingPrice,
+      price: p?.price ? parseRouterOSNumber(p.price) : prev.price,
+      sellingPrice: p?.selling_price
+        ? parseRouterOSNumber(p.selling_price)
+        : prev.sellingPrice,
     }))
   }
 
@@ -144,15 +172,51 @@ function PresetForm({ mode, target, onClose }: PresetFormProps) {
       toast.error('Name is required')
       return
     }
-    if (mode === 'add') {
-      const id = `*qp${Date.now().toString(36).slice(-4)}`
-      addPreset({ ...draft, id })
-      toast.success(`Preset '${draft.name}' added`)
-    } else if (mode === 'edit' && target) {
-      updatePreset(target.id, draft)
-      toast.success(`Preset '${draft.name}' updated`)
+    if (routerId == null) {
+      toast.error('Select a router first')
+      return
     }
-    onClose()
+
+    const apiBody = presetToApi(draft)
+    const meta = { color: draft.color, packageLabel: draft.package }
+
+    if (mode === 'add') {
+      createMutation.mutate(apiBody, {
+        onSuccess: () => {
+          // Meta lives in localStorage and is keyed by `name`; write it
+          // AFTER the backend confirms the create so an offline failure
+          // doesn't leave orphaned color/label entries.
+          setMeta(draft.name, meta)
+          toast.success(`Preset '${draft.name}' added`)
+          onClose()
+        },
+        onError: (err) => {
+          toast.error('Failed to add preset', { description: err.message })
+        },
+      })
+    } else if (mode === 'edit' && target) {
+      // Backend identifies packages by name → renaming is a PUT against
+      // the OLD name where body.name carries the NEW name. Mirror the
+      // rename in the meta store so the local color/label follows.
+      updateMutation.mutate(
+        { name: target.name, body: apiBody },
+        {
+          onSuccess: () => {
+            if (target.name !== draft.name) {
+              renameMeta(target.name, draft.name)
+            }
+            setMeta(draft.name, meta)
+            toast.success(`Preset '${draft.name}' updated`)
+            onClose()
+          },
+          onError: (err) => {
+            toast.error('Failed to update preset', {
+              description: err.message,
+            })
+          },
+        },
+      )
+    }
   }
 
   return (
@@ -375,11 +439,18 @@ function PresetForm({ mode, target, onClose }: PresetFormProps) {
 
         <SheetFooter className='border-t'>
           <SheetClose asChild>
-            <Button variant='outline' size='sm'>
+            <Button variant='outline' size='sm' disabled={isPending}>
               Cancel
             </Button>
           </SheetClose>
-          <Button type='submit' size='sm' form='preset-form'>
+          <Button
+            type='submit'
+            size='sm'
+            form='preset-form'
+            disabled={isPending}
+            className='gap-1.5'
+          >
+            {isPending && <Loader2 className='size-4 animate-spin' />}
             {mode === 'add' ? 'Add Preset' : 'Save Changes'}
           </Button>
         </SheetFooter>

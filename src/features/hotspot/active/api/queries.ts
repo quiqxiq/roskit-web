@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { qk } from '@/lib/api/query-keys'
+import { useSSE, type UseSSEResult } from '@/lib/api/sse'
 import * as svc from './service'
 
 const activePrefix = (routerId: number) =>
@@ -40,4 +41,20 @@ export function useDisconnectHotspotUser(routerId: number) {
       qc.invalidateQueries({ queryKey: cookiesPrefix(routerId) })
     },
   })
+}
+
+// ─────────────────── SSE ───────────────────
+
+// `useHotspotActiveStream` keeps the active-sessions list live by
+// invalidating the query on every telemetry event for the
+// `hotspot_active` measurement. Returns the SSE status so the page can
+// render a live-indicator dot.
+export function useHotspotActiveStream(routerId: number): UseSSEResult {
+  const qc = useQueryClient()
+  return useSSE<unknown>(
+    routerId > 0 ? `/routers/${routerId}/sse/hotspot/active` : null,
+    () => {
+      qc.invalidateQueries({ queryKey: activePrefix(routerId) })
+    },
+  )
 }

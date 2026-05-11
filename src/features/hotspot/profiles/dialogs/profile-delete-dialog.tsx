@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { useHotspotProfilesStore } from '@/stores/hotspot-profiles-store'
+import { useActiveRouterId } from '@/stores/active-router-store'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,26 +10,46 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { useRemoveHotspotProfile } from '../api/queries'
 import { useProfilesDialogStore } from '../store/profiles-dialog-store'
 
 export function ProfileDeleteDialog() {
   const { mode, target, ids, close } = useProfilesDialogStore()
-  const remove = useHotspotProfilesStore((s) => s.remove)
-  const removeMany = useHotspotProfilesStore((s) => s.removeMany)
+  const routerId = useActiveRouterId() ?? 0
+  const removeMutation = useRemoveHotspotProfile(routerId)
 
   const isOpen = mode === 'delete' || mode === 'multi-delete'
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (mode === 'delete' && target) {
-      remove(target.id)
-      toast.success(`Profile '${target.name}' deleted`)
-    } else if (mode === 'multi-delete' && ids.length > 0) {
-      removeMany(ids)
-      toast.success(
-        `Deleted ${ids.length} profile${ids.length > 1 ? 's' : ''}`
-      )
+      try {
+        await removeMutation.mutateAsync(target.id)
+        toast.success(`Profile '${target.name}' deleted`)
+      } catch (err) {
+        toast.error('Failed to delete profile', {
+          description: err instanceof Error ? err.message : String(err),
+        })
+      }
+      close()
+      return
     }
-    close()
+    if (mode === 'multi-delete' && ids.length > 0) {
+      const results = await Promise.allSettled(
+        ids.map((id) => removeMutation.mutateAsync(id)),
+      )
+      const failed = results.filter((r) => r.status === 'rejected').length
+      const ok = results.length - failed
+      if (failed === 0) {
+        toast.success(`Deleted ${ok} profile${ok > 1 ? 's' : ''}`)
+      } else if (ok === 0) {
+        toast.error(`Failed to delete ${failed} profile${failed > 1 ? 's' : ''}`)
+      } else {
+        toast.warning(
+          `Deleted ${ok}, failed ${failed} of ${results.length} profiles`,
+        )
+      }
+      close()
+    }
   }
 
   return (
@@ -50,9 +70,12 @@ export function ProfileDeleteDialog() {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={removeMutation.isPending}>
+            Cancel
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
+            disabled={removeMutation.isPending}
             className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
           >
             Delete

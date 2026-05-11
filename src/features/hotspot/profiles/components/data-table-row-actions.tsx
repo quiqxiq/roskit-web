@@ -1,8 +1,8 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
 import { Bell, BellOff, Pencil, Trash2, Users } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 import { toast } from 'sonner'
-import { useHotspotProfilesStore } from '@/stores/hotspot-profiles-store'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -11,35 +11,31 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { type HotspotProfile } from '../data/schema'
 import { useProfilesDialogStore } from '../store/profiles-dialog-store'
+import { type HotspotProfileViewModel } from './view-model'
 
 type DataTableRowActionsProps = {
-  row: Row<HotspotProfile>
+  row: Row<HotspotProfileViewModel>
 }
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const profile = row.original
   const openDialog = useProfilesDialogStore((s) => s.open)
-  const setMonitor = useHotspotProfilesStore((s) => s.setMonitor)
 
   const handleEdit = () => {
     openDialog('edit', { target: profile })
   }
 
-  const handleViewUsers = () => {
-    toast.info('View Users', {
-      description: `Filter Users by profile: ${profile.name}`,
-    })
-  }
-
+  // "Setup Monitor" requires installing/removing a scheduler on the
+  // device — the dedicated backend endpoint for that lands in Phase 8.
+  // For now this is a no-op with a clear toast so the surface stays
+  // visible without lying to the user.
   const handleToggleMonitor = () => {
-    setMonitor(profile.id, !profile.hasExpiredMonitor)
-    if (profile.hasExpiredMonitor) {
-      toast.success(`Removed expired monitor for ${profile.name}`)
-    } else {
-      toast.success(`Setup expired monitor for ${profile.name}`)
-    }
+    toast.info('Coming soon', {
+      description: profile.hasExpiredMonitor
+        ? 'Remove monitor wiring lands in Phase 8.'
+        : 'Setup monitor wiring lands in Phase 8.',
+    })
   }
 
   const handleDelete = () => {
@@ -62,9 +58,11 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           <Pencil className='size-4' />
           Edit Profile
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleViewUsers}>
-          <Users className='size-4' />
-          View Users
+        <DropdownMenuItem asChild>
+          <Link to='/hotspot/users' className='flex items-center gap-2'>
+            <Users className='size-4' />
+            View Users
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuItem onClick={handleToggleMonitor}>
           {profile.hasExpiredMonitor ? (

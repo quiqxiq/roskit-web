@@ -1,4 +1,4 @@
-import { Plus, RotateCcw } from 'lucide-react'
+import { Loader2, Plus, RotateCcw } from 'lucide-react'
 import { formatIDR } from '@/features/hotspot/profiles/data/data'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -36,6 +36,7 @@ type VoucherGenerateFormProps = {
   onChange: (form: VoucherGenerateForm) => void
   onGenerate: () => void
   onReset: () => void
+  isGenerating?: boolean
 }
 
 export function VoucherGenerateFormPanel({
@@ -43,6 +44,7 @@ export function VoucherGenerateFormPanel({
   onChange,
   onGenerate,
   onReset,
+  isGenerating = false,
 }: VoucherGenerateFormProps) {
   const update = <K extends keyof VoucherGenerateForm>(
     key: K,
@@ -229,9 +231,18 @@ export function VoucherGenerateFormPanel({
           </Field>
 
           <div className='flex flex-wrap gap-2 pt-2'>
-            <Button type='submit' size='sm' className='gap-1.5'>
-              <Plus className='size-4' />
-              Generate
+            <Button
+              type='submit'
+              size='sm'
+              className='gap-1.5'
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <Loader2 className='size-4 animate-spin' />
+              ) : (
+                <Plus className='size-4' />
+              )}
+              {isGenerating ? 'Generating…' : 'Generate'}
             </Button>
             <Button
               type='button'
@@ -239,6 +250,7 @@ export function VoucherGenerateFormPanel({
               size='sm'
               className='gap-1.5'
               onClick={onReset}
+              disabled={isGenerating}
             >
               <RotateCcw className='size-4' />
               Reset

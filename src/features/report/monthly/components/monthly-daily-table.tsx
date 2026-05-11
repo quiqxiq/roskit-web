@@ -9,10 +9,10 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { type DailySummaryRow } from '../data/schema'
+import { type MonthlyChartRow } from '../index'
 
 type MonthlyDailyTableProps = {
-  rows: DailySummaryRow[]
+  rows: MonthlyChartRow[]
   onSelectDay: (date: Date) => void
 }
 

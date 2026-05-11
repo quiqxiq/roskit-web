@@ -1,5 +1,18 @@
-import { Download, FileSpreadsheet, FileText, Printer } from 'lucide-react'
+import { useState } from 'react'
+import {
+  Download,
+  FileSpreadsheet,
+  FileText,
+  Loader2,
+  Printer,
+} from 'lucide-react'
 import { toast } from 'sonner'
+import { useRouters } from '@/features/routers/api/queries'
+import { downloadBlob } from '@/features/voucher/sales/api/download'
+import {
+  exportSalesCSV,
+  exportSalesExcel,
+} from '@/features/voucher/sales/api/service'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -7,35 +20,77 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { downloadCsv, exportDailyCsv } from '../data/data'
-import { type DailyReport } from '../data/schema'
 
 type DailyExportMenuProps = {
-  report: DailyReport
+  routerId: number
+  date: string // YYYY-MM-DD — already in the same format the backend expects.
+  disabled?: boolean
 }
 
-function dateSlug(date: Date): string {
-  return [
-    date.getFullYear(),
-    (date.getMonth() + 1).toString().padStart(2, '0'),
-    date.getDate().toString().padStart(2, '0'),
-  ].join('-')
+// Build a filesystem-safe slug from the router's display name. Used as a
+// filename prefix so an admin managing multiple routers doesn't end up
+// with N copies of `daily-2025-12-31.csv` colliding in their downloads
+// folder.
+function slugifyRouterName(name: string | undefined): string {
+  if (!name) return 'router'
+  return (
+    name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'router'
+  )
 }
 
-export function DailyExportMenu({ report }: DailyExportMenuProps) {
-  const handleCsv = () => {
-    const csv = exportDailyCsv(report)
-    downloadCsv(`daily-report-${dateSlug(report.date)}.csv`, csv)
-    toast.success('CSV downloaded', {
-      description: `${report.count} rows exported`,
-    })
+export function DailyExportMenu({
+  routerId,
+  date,
+  disabled,
+}: DailyExportMenuProps) {
+  // Read the router list straight from cache — `useRouters` is shared
+  // with the sidebar switcher, so this hook will already be hydrated by
+  // the time the user reaches a report page.
+  const routersQuery = useRouters()
+  const router = routersQuery.data?.find((r) => r.id === routerId)
+  const slug = slugifyRouterName(router?.name)
+
+  // One in-flight flag covers both CSV and Excel — they share the
+  // dropdown trigger, so we just need to disable everything while a
+  // download is being prepared. Print stays clickable since it's local.
+  const [pending, setPending] = useState<'csv' | 'excel' | null>(null)
+  const isPending = pending != null
+
+  const runDownload = async (
+    kind: 'csv' | 'excel',
+    filename: string,
+    fetcher: () => Promise<Blob>,
+  ) => {
+    setPending(kind)
+    try {
+      const blob = await fetcher()
+      downloadBlob(blob, filename)
+      toast.success(`${kind.toUpperCase()} downloaded`, {
+        description: filename,
+      })
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : `Failed to export ${kind}`
+      toast.error('Export failed', { description: msg })
+    } finally {
+      setPending(null)
+    }
   }
 
-  const handleExcel = () => {
-    toast.info('Excel export', {
-      description: 'XLSX export coming soon — use CSV for now.',
-    })
-  }
+  const handleCsv = () =>
+    runDownload('csv', `daily-${slug}-${date}.csv`, () =>
+      // Daily export = single-day range. Backend treats `from === to` as
+      // inclusive of that one day's sales.
+      exportSalesCSV(routerId, date, date),
+    )
+
+  const handleExcel = () =>
+    runDownload('excel', `daily-${slug}-${date}.xlsx`, () =>
+      exportSalesExcel(routerId, date, date),
+    )
 
   const handlePrint = () => {
     window.print()
@@ -44,17 +99,26 @@ export function DailyExportMenu({ report }: DailyExportMenuProps) {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant='outline' size='sm' className='h-8 gap-1.5'>
-          <Download className='size-3.5' />
+        <Button
+          variant='outline'
+          size='sm'
+          className='h-8 gap-1.5'
+          disabled={disabled || isPending}
+        >
+          {isPending ? (
+            <Loader2 className='size-3.5 animate-spin' />
+          ) : (
+            <Download className='size-3.5' />
+          )}
           Export
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-44'>
-        <DropdownMenuItem onClick={handleCsv}>
+        <DropdownMenuItem onClick={handleCsv} disabled={isPending}>
           <FileText className='size-4' />
           Export CSV
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleExcel}>
+        <DropdownMenuItem onClick={handleExcel} disabled={isPending}>
           <FileSpreadsheet className='size-4' />
           Export Excel
         </DropdownMenuItem>

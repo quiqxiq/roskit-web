@@ -6,10 +6,15 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { type MonthlyReport } from '../data/schema'
 
+// "Best Day" is computed in the parent (the backend doesn't expose it),
+// so this component takes the resolved date + total directly. Keeps the
+// summary card free of any business logic.
 type MonthlySummaryCardsProps = {
-  report: MonthlyReport
+  count: number
+  total: number
+  bestDate: Date | null
+  bestTotal: number
 }
 
 const dateFormatter = new Intl.DateTimeFormat('id-ID', {
@@ -18,28 +23,31 @@ const dateFormatter = new Intl.DateTimeFormat('id-ID', {
   month: 'short',
 })
 
-export function MonthlySummaryCards({ report }: MonthlySummaryCardsProps) {
+export function MonthlySummaryCards({
+  count,
+  total,
+  bestDate,
+  bestTotal,
+}: MonthlySummaryCardsProps) {
   const tiles = [
     {
       title: 'Total Sales',
-      value: String(report.count),
+      value: String(count),
       subtitle: 'vouchers sold this month',
       icon: Receipt,
       iconClass: 'text-sky-600 dark:text-sky-400',
     },
     {
       title: 'Total Revenue',
-      value: formatIDR(report.total),
+      value: formatIDR(total),
       subtitle: 'after selling price',
       icon: Wallet,
       iconClass: 'text-emerald-600 dark:text-emerald-400',
     },
     {
       title: 'Best Day',
-      value: report.best.date
-        ? dateFormatter.format(report.best.date)
-        : '—',
-      subtitle: report.best.date ? formatIDR(report.best.total) : 'no sales',
+      value: bestDate ? dateFormatter.format(bestDate) : '—',
+      subtitle: bestDate ? formatIDR(bestTotal) : 'no sales',
       icon: Award,
       iconClass: 'text-amber-600 dark:text-amber-400',
     },

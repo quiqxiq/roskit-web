@@ -1,13 +1,11 @@
 import { type ColumnDef } from '@tanstack/react-table'
-import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
-import { hostFlags } from '../data/data'
-import { type HotspotHost } from '../data/schema'
+import { type HotspotHostViewModel } from './view-model'
 import { DataTableRowActions } from './data-table-row-actions'
 
-export const columns: ColumnDef<HotspotHost>[] = [
+export const columns: ColumnDef<HotspotHostViewModel>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -33,30 +31,23 @@ export const columns: ColumnDef<HotspotHost>[] = [
     enableHiding: false,
   },
   {
-    id: 'flags',
+    id: 'authorized',
+    accessorFn: (row) => String(row.authorized),
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Flags' />
+      <DataTableColumnHeader column={column} title='Authorized' />
     ),
-    cell: ({ row }) => {
-      const flags = hostFlags(row.original)
-      if (flags.length === 0) {
-        return <span className='text-muted-foreground'>—</span>
-      }
-      return (
-        <div className='flex flex-wrap gap-1'>
-          {flags.map((f) => (
-            <Badge
-              key={f.label}
-              variant='outline'
-              title={f.title}
-              className={cn('h-5 px-1.5 font-mono text-[10px]', f.className)}
-            >
-              {f.label}
-            </Badge>
-          ))}
-        </div>
-      )
-    },
+    cell: ({ row }) =>
+      row.original.authorized ? (
+        <Badge variant='online'>
+          <span className='text-[8px]'>●</span>
+          authorized
+        </Badge>
+      ) : (
+        <Badge variant='outline' className='text-muted-foreground'>
+          —
+        </Badge>
+      ),
+    filterFn: (row, id, value) => value.includes(row.getValue(id)),
     enableSorting: false,
   },
   {
@@ -65,7 +56,9 @@ export const columns: ColumnDef<HotspotHost>[] = [
       <DataTableColumnHeader column={column} title='MAC Address' />
     ),
     cell: ({ row }) => (
-      <span className='font-mono text-sm'>{row.getValue('macAddress')}</span>
+      <span className='font-mono text-sm'>
+        {row.original.macAddress || '—'}
+      </span>
     ),
     enableHiding: false,
   },
@@ -75,7 +68,7 @@ export const columns: ColumnDef<HotspotHost>[] = [
       <DataTableColumnHeader column={column} title='Address' />
     ),
     cell: ({ row }) => (
-      <span className='font-mono text-sm'>{row.getValue('address')}</span>
+      <span className='font-mono text-sm'>{row.original.address || '—'}</span>
     ),
   },
   {
@@ -84,7 +77,7 @@ export const columns: ColumnDef<HotspotHost>[] = [
       <DataTableColumnHeader column={column} title='To Address' />
     ),
     cell: ({ row }) => (
-      <span className='font-mono text-sm'>{row.getValue('toAddress')}</span>
+      <span className='font-mono text-sm'>{row.original.toAddress || '—'}</span>
     ),
   },
   {
@@ -92,11 +85,14 @@ export const columns: ColumnDef<HotspotHost>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Server' />
     ),
-    cell: ({ row }) => (
-      <Badge variant='outline' className='font-mono'>
-        {row.getValue('server')}
-      </Badge>
-    ),
+    cell: ({ row }) =>
+      row.original.server ? (
+        <Badge variant='outline' className='font-mono'>
+          {row.original.server}
+        </Badge>
+      ) : (
+        <span className='text-muted-foreground'>—</span>
+      ),
     filterFn: (row, id, value) => value.includes(row.getValue(id)),
   },
   {
@@ -105,9 +101,9 @@ export const columns: ColumnDef<HotspotHost>[] = [
       <DataTableColumnHeader column={column} title='Comment' />
     ),
     cell: ({ row }) => {
-      const comment = row.original.comment
-      return comment ? (
-        <span className='text-sm text-muted-foreground'>{comment}</span>
+      const c = row.original.comment
+      return c ? (
+        <span className='text-sm text-muted-foreground'>{c}</span>
       ) : (
         <span className='text-muted-foreground'>—</span>
       )

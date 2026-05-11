@@ -8,10 +8,10 @@ import {
   YAxis,
 } from 'recharts'
 import { formatIDR } from '@/lib/format'
-import { type DailySummaryRow } from '../data/schema'
+import { type MonthlyChartRow } from '../index'
 
 type MonthlyBarChartProps = {
-  rows: DailySummaryRow[]
+  rows: MonthlyChartRow[]
   onSelectDay?: (date: Date) => void
 }
 

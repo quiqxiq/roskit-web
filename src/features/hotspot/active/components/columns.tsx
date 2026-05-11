@@ -2,11 +2,10 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
-import { formatBytes } from '../data/data'
-import { type HotspotActive } from '../data/schema'
+import { type HotspotActiveViewModel } from './view-model'
 import { DataTableRowActions } from './data-table-row-actions'
 
-export const columns: ColumnDef<HotspotActive>[] = [
+export const columns: ColumnDef<HotspotActiveViewModel>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -38,7 +37,7 @@ export const columns: ColumnDef<HotspotActive>[] = [
     ),
     cell: ({ row }) => (
       <Badge variant='outline' className='font-mono'>
-        {row.getValue('server')}
+        {row.original.server || '—'}
       </Badge>
     ),
     filterFn: (row, id, value) => value.includes(row.getValue(id)),
@@ -49,7 +48,7 @@ export const columns: ColumnDef<HotspotActive>[] = [
       <DataTableColumnHeader column={column} title='User' />
     ),
     cell: ({ row }) => (
-      <span className='font-semibold'>{row.getValue('user')}</span>
+      <span className='font-semibold'>{row.original.user || '—'}</span>
     ),
     enableHiding: false,
   },
@@ -59,7 +58,7 @@ export const columns: ColumnDef<HotspotActive>[] = [
       <DataTableColumnHeader column={column} title='Address' />
     ),
     cell: ({ row }) => (
-      <span className='font-mono text-sm'>{row.getValue('address')}</span>
+      <span className='font-mono text-sm'>{row.original.address || '—'}</span>
     ),
   },
   {
@@ -68,7 +67,7 @@ export const columns: ColumnDef<HotspotActive>[] = [
       <DataTableColumnHeader column={column} title='MAC' />
     ),
     cell: ({ row }) => (
-      <span className='font-mono text-sm'>{row.getValue('macAddress')}</span>
+      <span className='font-mono text-sm'>{row.original.macAddress || '—'}</span>
     ),
   },
   {
@@ -77,28 +76,8 @@ export const columns: ColumnDef<HotspotActive>[] = [
       <DataTableColumnHeader column={column} title='Uptime' />
     ),
     cell: ({ row }) => (
-      <span className='font-mono text-sm'>{row.getValue('uptime')}</span>
+      <span className='font-mono text-sm'>{row.original.uptime || '—'}</span>
     ),
-  },
-  {
-    id: 'traffic',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Traffic' />
-    ),
-    accessorFn: (row) => row.bytesIn + row.bytesOut,
-    cell: ({ row }) => {
-      const { bytesIn, bytesOut } = row.original
-      return (
-        <div className='font-mono text-xs'>
-          <span className='text-sky-600 dark:text-sky-400'>
-            ↓{formatBytes(bytesIn)}
-          </span>{' '}
-          <span className='text-violet-600 dark:text-violet-400'>
-            ↑{formatBytes(bytesOut)}
-          </span>
-        </div>
-      )
-    },
   },
   {
     accessorKey: 'sessionTimeLeft',
@@ -107,7 +86,7 @@ export const columns: ColumnDef<HotspotActive>[] = [
     ),
     cell: ({ row }) => (
       <span className='font-mono text-sm'>
-        {row.getValue('sessionTimeLeft')}
+        {row.original.sessionTimeLeft || '—'}
       </span>
     ),
   },
@@ -116,26 +95,17 @@ export const columns: ColumnDef<HotspotActive>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Login By' />
     ),
-    cell: ({ row }) => (
-      <Badge variant='outline' className='font-normal capitalize'>
-        {row.getValue('loginBy')}
-      </Badge>
-    ),
-    filterFn: (row, id, value) => value.includes(row.getValue(id)),
-  },
-  {
-    accessorKey: 'comment',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Comment' />
-    ),
     cell: ({ row }) => {
-      const comment = row.original.comment
-      return comment ? (
-        <span className='text-sm text-muted-foreground'>{comment}</span>
+      const v = row.original.loginBy
+      return v ? (
+        <Badge variant='outline' className='font-normal capitalize'>
+          {v}
+        </Badge>
       ) : (
         <span className='text-muted-foreground'>—</span>
       )
     },
+    filterFn: (row, id, value) => value.includes(row.getValue(id)),
   },
   {
     id: 'actions',

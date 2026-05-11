@@ -1,6 +1,10 @@
 import { Copy, Printer, QrCode } from 'lucide-react'
 import { toast } from 'sonner'
-import { useHotspotProfilesStore } from '@/stores/hotspot-profiles-store'
+import { useActiveRouterId } from '@/stores/active-router-store'
+import { useHotspotProfiles } from '@/features/hotspot/profiles/api/queries'
+import {
+  parseRouterOSNumber,
+} from '@/features/hotspot/_shared/format'
 import {
   usePrintStore,
   type PrintTemplate,
@@ -36,9 +40,12 @@ export function VoucherResultTable({
 }: VoucherResultTableProps) {
   const count = vouchers.length
   const openPrint = usePrintStore((s) => s.open)
-  const profileItem = useHotspotProfilesStore((s) =>
-    s.items.find((p) => p.name === profile)
-  )
+  const routerId = useActiveRouterId() ?? 0
+  // Profile pricing/validity is sourced from the live profiles list now
+  // — when no router is selected this falls through to undefined and
+  // the print metadata uses the same fallback as before.
+  const profilesQuery = useHotspotProfiles(routerId)
+  const profileItem = profilesQuery.data?.find((p) => p.name === profile)
 
   const handleCopyAll = () => {
     const csv = vouchersToCsv(vouchers)
@@ -55,7 +62,7 @@ export function VoucherResultTable({
         profile,
         server: server ?? 'all',
         validity: profileItem?.validity ?? '—',
-        sellingPrice: profileItem?.sellingPrice ?? 0,
+        sellingPrice: parseRouterOSNumber(profileItem?.selling_price),
       },
     })
   }

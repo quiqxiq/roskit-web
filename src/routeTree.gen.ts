@@ -39,6 +39,7 @@ import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authentica
 import { Route as ClerkAuthenticatedUserManagementRouteImport } from './routes/clerk/_authenticated/user-management'
 import { Route as ClerkauthSignUpRouteImport } from './routes/clerk/(auth)/sign-up'
 import { Route as ClerkauthSignInRouteImport } from './routes/clerk/(auth)/sign-in'
+import { Route as AuthenticatedVoucherSalesRouteImport } from './routes/_authenticated/voucher/sales'
 import { Route as AuthenticatedVoucherPrintRouteImport } from './routes/_authenticated/voucher/print'
 import { Route as AuthenticatedVoucherGenerateRouteImport } from './routes/_authenticated/voucher/generate'
 import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
@@ -52,7 +53,9 @@ import { Route as AuthenticatedHotspotProfilesRouteImport } from './routes/_auth
 import { Route as AuthenticatedHotspotHostsRouteImport } from './routes/_authenticated/hotspot/hosts'
 import { Route as AuthenticatedHotspotActiveRouteImport } from './routes/_authenticated/hotspot/active'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedAdminUsersIndexRouteImport } from './routes/_authenticated/admin/users/index'
 import { Route as AuthenticatedAdminTemplatesIndexRouteImport } from './routes/_authenticated/admin/templates/index'
+import { Route as AuthenticatedAdminSettingsIndexRouteImport } from './routes/_authenticated/admin/settings/index'
 
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
   id: '/clerk',
@@ -208,6 +211,12 @@ const ClerkauthSignInRoute = ClerkauthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => ClerkauthRouteRoute,
 } as any)
+const AuthenticatedVoucherSalesRoute =
+  AuthenticatedVoucherSalesRouteImport.update({
+    id: '/voucher/sales',
+    path: '/voucher/sales',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedVoucherPrintRoute =
   AuthenticatedVoucherPrintRouteImport.update({
     id: '/voucher/print',
@@ -286,10 +295,22 @@ const AuthenticatedErrorsErrorRoute =
     path: '/errors/$error',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminUsersIndexRoute =
+  AuthenticatedAdminUsersIndexRouteImport.update({
+    id: '/users/',
+    path: '/users/',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
 const AuthenticatedAdminTemplatesIndexRoute =
   AuthenticatedAdminTemplatesIndexRouteImport.update({
     id: '/templates/',
     path: '/templates/',
+    getParentRoute: () => AuthenticatedAdminRouteRoute,
+  } as any)
+const AuthenticatedAdminSettingsIndexRoute =
+  AuthenticatedAdminSettingsIndexRouteImport.update({
+    id: '/settings/',
+    path: '/settings/',
     getParentRoute: () => AuthenticatedAdminRouteRoute,
   } as any)
 
@@ -321,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/voucher/generate': typeof AuthenticatedVoucherGenerateRoute
   '/voucher/print': typeof AuthenticatedVoucherPrintRoute
+  '/voucher/sales': typeof AuthenticatedVoucherSalesRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
@@ -334,7 +356,9 @@ export interface FileRoutesByFullPath {
   '/traffic/': typeof AuthenticatedTrafficIndexRoute
   '/users/': typeof AuthenticatedUsersIndexRoute
   '/voucher/': typeof AuthenticatedVoucherIndexRoute
+  '/admin/settings/': typeof AuthenticatedAdminSettingsIndexRoute
   '/admin/templates/': typeof AuthenticatedAdminTemplatesIndexRoute
+  '/admin/users/': typeof AuthenticatedAdminUsersIndexRoute
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -363,6 +387,7 @@ export interface FileRoutesByTo {
   '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/voucher/generate': typeof AuthenticatedVoucherGenerateRoute
   '/voucher/print': typeof AuthenticatedVoucherPrintRoute
+  '/voucher/sales': typeof AuthenticatedVoucherSalesRoute
   '/clerk/sign-in': typeof ClerkauthSignInRoute
   '/clerk/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/user-management': typeof ClerkAuthenticatedUserManagementRoute
@@ -376,7 +401,9 @@ export interface FileRoutesByTo {
   '/traffic': typeof AuthenticatedTrafficIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
   '/voucher': typeof AuthenticatedVoucherIndexRoute
+  '/admin/settings': typeof AuthenticatedAdminSettingsIndexRoute
   '/admin/templates': typeof AuthenticatedAdminTemplatesIndexRoute
+  '/admin/users': typeof AuthenticatedAdminUsersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -410,6 +437,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/voucher/generate': typeof AuthenticatedVoucherGenerateRoute
   '/_authenticated/voucher/print': typeof AuthenticatedVoucherPrintRoute
+  '/_authenticated/voucher/sales': typeof AuthenticatedVoucherSalesRoute
   '/clerk/(auth)/sign-in': typeof ClerkauthSignInRoute
   '/clerk/(auth)/sign-up': typeof ClerkauthSignUpRoute
   '/clerk/_authenticated/user-management': typeof ClerkAuthenticatedUserManagementRoute
@@ -423,7 +451,9 @@ export interface FileRoutesById {
   '/_authenticated/traffic/': typeof AuthenticatedTrafficIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/voucher/': typeof AuthenticatedVoucherIndexRoute
+  '/_authenticated/admin/settings/': typeof AuthenticatedAdminSettingsIndexRoute
   '/_authenticated/admin/templates/': typeof AuthenticatedAdminTemplatesIndexRoute
+  '/_authenticated/admin/users/': typeof AuthenticatedAdminUsersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -455,6 +485,7 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/voucher/generate'
     | '/voucher/print'
+    | '/voucher/sales'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
@@ -468,7 +499,9 @@ export interface FileRouteTypes {
     | '/traffic/'
     | '/users/'
     | '/voucher/'
+    | '/admin/settings/'
     | '/admin/templates/'
+    | '/admin/users/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
@@ -497,6 +530,7 @@ export interface FileRouteTypes {
     | '/settings/notifications'
     | '/voucher/generate'
     | '/voucher/print'
+    | '/voucher/sales'
     | '/clerk/sign-in'
     | '/clerk/sign-up'
     | '/clerk/user-management'
@@ -510,7 +544,9 @@ export interface FileRouteTypes {
     | '/traffic'
     | '/users'
     | '/voucher'
+    | '/admin/settings'
     | '/admin/templates'
+    | '/admin/users'
   id:
     | '__root__'
     | '/_authenticated'
@@ -543,6 +579,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/notifications'
     | '/_authenticated/voucher/generate'
     | '/_authenticated/voucher/print'
+    | '/_authenticated/voucher/sales'
     | '/clerk/(auth)/sign-in'
     | '/clerk/(auth)/sign-up'
     | '/clerk/_authenticated/user-management'
@@ -556,7 +593,9 @@ export interface FileRouteTypes {
     | '/_authenticated/traffic/'
     | '/_authenticated/users/'
     | '/_authenticated/voucher/'
+    | '/_authenticated/admin/settings/'
     | '/_authenticated/admin/templates/'
+    | '/_authenticated/admin/users/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -786,6 +825,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClerkauthSignInRouteImport
       parentRoute: typeof ClerkauthRouteRoute
     }
+    '/_authenticated/voucher/sales': {
+      id: '/_authenticated/voucher/sales'
+      path: '/voucher/sales'
+      fullPath: '/voucher/sales'
+      preLoaderRoute: typeof AuthenticatedVoucherSalesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/voucher/print': {
       id: '/_authenticated/voucher/print'
       path: '/voucher/print'
@@ -877,6 +923,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin/users/': {
+      id: '/_authenticated/admin/users/'
+      path: '/users'
+      fullPath: '/admin/users/'
+      preLoaderRoute: typeof AuthenticatedAdminUsersIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
     '/_authenticated/admin/templates/': {
       id: '/_authenticated/admin/templates/'
       path: '/templates'
@@ -884,17 +937,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminTemplatesIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRouteRoute
     }
+    '/_authenticated/admin/settings/': {
+      id: '/_authenticated/admin/settings/'
+      path: '/settings'
+      fullPath: '/admin/settings/'
+      preLoaderRoute: typeof AuthenticatedAdminSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRouteRoute
+    }
   }
 }
 
 interface AuthenticatedAdminRouteRouteChildren {
+  AuthenticatedAdminSettingsIndexRoute: typeof AuthenticatedAdminSettingsIndexRoute
   AuthenticatedAdminTemplatesIndexRoute: typeof AuthenticatedAdminTemplatesIndexRoute
+  AuthenticatedAdminUsersIndexRoute: typeof AuthenticatedAdminUsersIndexRoute
 }
 
 const AuthenticatedAdminRouteRouteChildren: AuthenticatedAdminRouteRouteChildren =
   {
+    AuthenticatedAdminSettingsIndexRoute: AuthenticatedAdminSettingsIndexRoute,
     AuthenticatedAdminTemplatesIndexRoute:
       AuthenticatedAdminTemplatesIndexRoute,
+    AuthenticatedAdminUsersIndexRoute: AuthenticatedAdminUsersIndexRoute,
   }
 
 const AuthenticatedAdminRouteRouteWithChildren =
@@ -938,6 +1002,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedReportMonthlyRoute: typeof AuthenticatedReportMonthlyRoute
   AuthenticatedVoucherGenerateRoute: typeof AuthenticatedVoucherGenerateRoute
   AuthenticatedVoucherPrintRoute: typeof AuthenticatedVoucherPrintRoute
+  AuthenticatedVoucherSalesRoute: typeof AuthenticatedVoucherSalesRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
@@ -962,6 +1027,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedReportMonthlyRoute: AuthenticatedReportMonthlyRoute,
   AuthenticatedVoucherGenerateRoute: AuthenticatedVoucherGenerateRoute,
   AuthenticatedVoucherPrintRoute: AuthenticatedVoucherPrintRoute,
+  AuthenticatedVoucherSalesRoute: AuthenticatedVoucherSalesRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,

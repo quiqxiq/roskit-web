@@ -6,27 +6,32 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { type DailyReport } from '../data/schema'
 
+// Counts/totals come straight from the backend `DailyReport` envelope;
+// the parent passes them as scalars so this component stays decoupled
+// from the API schema (and from the filter state used for the "of N"
+// subtitle).
 type DailySummaryCardsProps = {
-  report: DailyReport
+  total: number
+  count: number
   filteredCount: number
   filteredTotal: number
 }
 
 export function DailySummaryCards({
-  report,
+  total,
+  count,
   filteredCount,
   filteredTotal,
 }: DailySummaryCardsProps) {
   const avg = filteredCount > 0 ? Math.round(filteredTotal / filteredCount) : 0
-  const isFiltered = filteredCount !== report.count
+  const isFiltered = filteredCount !== count
 
   const tiles = [
     {
       title: 'Sales Count',
       value: String(filteredCount),
-      subtitle: isFiltered ? `of ${report.count} on date` : 'vouchers sold',
+      subtitle: isFiltered ? `of ${count} on date` : 'vouchers sold',
       icon: Receipt,
       iconClass: 'text-sky-600 dark:text-sky-400',
     },
@@ -34,7 +39,7 @@ export function DailySummaryCards({
       title: 'Total Revenue',
       value: formatIDR(filteredTotal),
       subtitle: isFiltered
-        ? `of ${formatIDR(report.total)} on date`
+        ? `of ${formatIDR(total)} on date`
         : 'after selling price',
       icon: Wallet,
       iconClass: 'text-emerald-600 dark:text-emerald-400',

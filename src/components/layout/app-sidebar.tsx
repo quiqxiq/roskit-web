@@ -18,7 +18,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>
-        <RouterSwitcher routers={sidebarData.routers} />
+        <RouterSwitcher />
 
         {/* Replace switchers above with <AppTitle /> below for a plain app title */}
         {/* <AppTitle /> */}

@@ -1,15 +1,15 @@
 import { create } from 'zustand'
-import { type HotspotProfile } from '../data/schema'
+import { type HotspotProfileViewModel } from '../components/view-model'
 
 type DialogMode = 'add' | 'edit' | 'delete' | 'multi-delete' | null
 
 type ProfilesDialogState = {
   mode: DialogMode
-  target: HotspotProfile | null
+  target: HotspotProfileViewModel | null
   ids: string[]
   open: (
     mode: Exclude<DialogMode, null>,
-    payload?: { target?: HotspotProfile; ids?: string[] }
+    payload?: { target?: HotspotProfileViewModel; ids?: string[] }
   ) => void
   close: () => void
 }

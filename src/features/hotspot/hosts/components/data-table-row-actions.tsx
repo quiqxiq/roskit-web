@@ -10,11 +10,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { type HotspotHost } from '../data/schema'
 import { useHostsDialogStore } from '../store/hosts-dialog-store'
+import { type HotspotHostViewModel } from './view-model'
 
 type DataTableRowActionsProps = {
-  row: Row<HotspotHost>
+  row: Row<HotspotHostViewModel>
 }
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
@@ -46,7 +46,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-44'>
-        <DropdownMenuItem onClick={handleCopyMac}>
+        <DropdownMenuItem onClick={handleCopyMac} disabled={!host.macAddress}>
           <Copy className='size-4' />
           Copy MAC
         </DropdownMenuItem>

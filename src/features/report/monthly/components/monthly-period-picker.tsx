@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { MONTH_NAMES } from '../data/data'
+import { MONTH_NAMES } from '../../_shared/format'
 
 type MonthlyPeriodPickerProps = {
   year: number

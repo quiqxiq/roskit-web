@@ -6,12 +6,6 @@ type User = {
   avatar: string
 }
 
-type Router = {
-  name: string
-  logo: React.ElementType
-  plan: string
-}
-
 type BaseNavItem = {
   title: string
   badge?: string
@@ -37,7 +31,6 @@ type NavGroup = {
 
 type SidebarData = {
   user: User
-  routers: Router[]
   navGroups: NavGroup[]
 }
 

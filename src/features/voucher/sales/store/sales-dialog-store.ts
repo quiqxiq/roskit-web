@@ -1,28 +1,24 @@
 import { create } from 'zustand'
-import { type VoucherSale } from '@/features/voucher/data/sales'
 
-type DialogMode = 'delete' | 'multi-delete' | null
+// Sales-page dialog orchestration. Tracks which dialog (if any) is
+// currently open. Mirrors the pattern used by `presets-dialog-store`
+// so anyone familiar with the print presets page can read this in 10
+// seconds.
+//
+// No target payload yet — neither Record nor Import operate on an
+// existing row. If a future "Edit Sale" dialog appears (backend would
+// need a PATCH endpoint first), this store grows a `target` field.
+
+type SalesDialogKind = 'record' | 'import' | null
 
 type SalesDialogState = {
-  mode: DialogMode
-  target: VoucherSale | null
-  ids: number[]
-  open: (
-    mode: Exclude<DialogMode, null>,
-    payload?: { target?: VoucherSale; ids?: number[] }
-  ) => void
+  kind: SalesDialogKind
+  open: (kind: Exclude<SalesDialogKind, null>) => void
   close: () => void
 }
 
 export const useSalesDialogStore = create<SalesDialogState>()((set) => ({
-  mode: null,
-  target: null,
-  ids: [],
-  open: (mode, payload) =>
-    set({
-      mode,
-      target: payload?.target ?? null,
-      ids: payload?.ids ?? [],
-    }),
-  close: () => set({ mode: null, target: null, ids: [] }),
+  kind: null,
+  open: (kind) => set({ kind }),
+  close: () => set({ kind: null }),
 }))

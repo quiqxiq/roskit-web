@@ -2,15 +2,22 @@ import { Link } from '@tanstack/react-router'
 import {
   BarChart3,
   CalendarDays,
+  ListOrdered,
+  Loader2,
   Plus,
   Printer,
   RefreshCw,
+  ServerOff,
   Ticket,
   TrendingUp,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useQuickPrintPresetsStore } from '@/stores/quick-print-presets-store'
-import { useVoucherSalesStore } from '@/stores/voucher-sales-store'
+import { useQuickPrintPackages } from '@/features/voucher/print/api/queries'
+import {
+  useDailyReport,
+  useDashboardSummary,
+} from '@/features/voucher/sales/api/queries'
+import { useActiveRouterId } from '@/stores/active-router-store'
 import { formatIDR } from '@/lib/format'
 import { Button } from '@/components/ui/button'
 import {
@@ -28,12 +35,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Main } from '@/components/layout/main'
-import {
-  filterMonthSales,
-  filterTodaySales,
-  recentSales,
-  sumSelling,
-} from './data/sales'
 
 type KPI = {
   title: string
@@ -49,40 +50,76 @@ const dateFormatter = new Intl.DateTimeFormat('id-ID', {
   timeStyle: 'short',
 })
 
-export function VoucherOverview() {
-  const voucherSales = useVoucherSalesStore((s) => s.items)
-  const presetCount = useQuickPrintPresetsStore((s) => s.items.length)
-  const today = filterTodaySales(voucherSales)
-  const month = filterMonthSales(voucherSales)
-  const recent = recentSales(voucherSales, 10)
+// Backend's DailyReport endpoint expects YYYY-MM-DD; this matches the
+// canonical date key used by RouterOS sale-record names too.
+function todayIsoDate(): string {
+  const d = new Date()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${m}-${day}`
+}
 
-  const todaySum = sumSelling(today)
-  const monthSum = sumSelling(month)
-  const totalSum = sumSelling(voucherSales)
+const RECENT_SALES_LIMIT = 10
+
+export function VoucherOverview() {
+  const routerId = useActiveRouterId()
+  const today = todayIsoDate()
+
+  // KPI cards driven by /reports/summary (server-computed totals).
+  const summaryQuery = useDashboardSummary(routerId ?? 0)
+  // Recent sales table driven by today's daily report; sliced client-side
+  // because the backend has no `limit` param on this endpoint.
+  const dailyQuery = useDailyReport(routerId ?? 0, today)
+  // Quick-preset count for the 4th KPI card.
+  const presetsQuery = useQuickPrintPackages(routerId ?? 0)
+
+  // No-router-selected — every query above is gated on routerId > 0,
+  // so without a router this page is just a CTA to pick one.
+  if (routerId == null) {
+    return (
+      <Main className='flex flex-1 flex-col items-center justify-center gap-3 text-center'>
+        <ServerOff className='size-10 text-muted-foreground' />
+        <h2 className='text-xl font-bold tracking-tight'>No router selected</h2>
+        <p className='max-w-sm text-sm text-muted-foreground'>
+          Select a router from the sidebar switcher to view its voucher sales
+          summary.
+        </p>
+      </Main>
+    )
+  }
+
+  const summary = summaryQuery.data
+  const recent = (dailyQuery.data?.sales ?? []).slice(0, RECENT_SALES_LIMIT)
+  const presetCount = presetsQuery.data?.length ?? 0
+  const isFetching =
+    summaryQuery.isFetching || dailyQuery.isFetching || presetsQuery.isFetching
 
   const kpis: KPI[] = [
     {
       title: "Today's Sales",
-      value: String(today.length),
-      subtitle: formatIDR(todaySum),
+      value: String(summary?.today_count ?? 0),
+      subtitle: formatIDR(summary?.today_sum ?? 0),
       icon: TrendingUp,
       to: '/voucher/generate',
       iconClass: 'text-emerald-600 dark:text-emerald-400',
     },
     {
       title: 'This Month',
-      value: String(month.length),
-      subtitle: formatIDR(monthSum),
+      value: String(summary?.month_count ?? 0),
+      subtitle: formatIDR(summary?.month_sum ?? 0),
       icon: CalendarDays,
-      to: '/voucher/generate',
+      to: '/report/monthly',
       iconClass: 'text-sky-600 dark:text-sky-400',
     },
     {
-      title: 'Total Sales',
-      value: String(voucherSales.length),
-      subtitle: formatIDR(totalSum),
+      // The backend doesn't expose an "all-time total" KPI. Repurposing
+      // this card to track today's price totals — keeps the 4-card grid
+      // and surfaces another useful number without a new endpoint.
+      title: 'Today Revenue',
+      value: formatIDR(summary?.today_sum ?? 0),
+      subtitle: `${summary?.today_count ?? 0} voucher${summary?.today_count === 1 ? '' : 's'}`,
       icon: BarChart3,
-      to: '/voucher/generate',
+      to: '/report/daily',
       iconClass: 'text-violet-600 dark:text-violet-400',
     },
     {
@@ -94,6 +131,13 @@ export function VoucherOverview() {
       iconClass: 'text-amber-600 dark:text-amber-400',
     },
   ]
+
+  const handleRefresh = () => {
+    summaryQuery.refetch()
+    dailyQuery.refetch()
+    presetsQuery.refetch()
+    toast.info('Refreshing voucher data…')
+  }
 
   return (
     <Main className='flex flex-1 flex-col gap-3 sm:gap-6'>
@@ -109,13 +153,14 @@ export function VoucherOverview() {
         <Button
           variant='outline'
           size='sm'
-          onClick={() =>
-            toast.info('Refreshed', {
-              description: 'Voucher data refreshed.',
-            })
-          }
+          onClick={handleRefresh}
+          disabled={isFetching}
         >
-          <RefreshCw className='size-4' />
+          {isFetching ? (
+            <Loader2 className='size-4 animate-spin' />
+          ) : (
+            <RefreshCw className='size-4' />
+          )}
           Refresh
         </Button>
       </div>
@@ -164,6 +209,12 @@ export function VoucherOverview() {
             </Link>
           </Button>
           <Button asChild variant='outline' size='sm' className='gap-1.5'>
+            <Link to='/voucher/sales'>
+              <ListOrdered className='size-4' />
+              Sales History
+            </Link>
+          </Button>
+          <Button asChild variant='outline' size='sm' className='gap-1.5'>
             <Link to='/report/daily'>
               <BarChart3 className='size-4' />
               View Reports
@@ -173,11 +224,21 @@ export function VoucherOverview() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <CardTitle className='text-base'>Recent Sales</CardTitle>
-          <p className='text-xs text-muted-foreground'>
-            Last {recent.length} voucher sales
-          </p>
+        <CardHeader className='flex flex-row items-start justify-between gap-2 space-y-0'>
+          <div className='space-y-1'>
+            <CardTitle className='text-base'>Recent Sales</CardTitle>
+            <p className='text-xs text-muted-foreground'>
+              {dailyQuery.isLoading
+                ? 'Loading today’s sales…'
+                : `Today’s sales — showing latest ${recent.length}`}
+            </p>
+          </div>
+          <Button asChild variant='ghost' size='sm' className='gap-1.5'>
+            <Link to='/voucher/sales'>
+              View all
+              <ListOrdered className='size-4' />
+            </Link>
+          </Button>
         </CardHeader>
         <CardContent>
           <div className='overflow-x-auto rounded-md border'>
@@ -192,30 +253,39 @@ export function VoucherOverview() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {recent.length === 0 ? (
+                {dailyQuery.isError ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={5}
+                      className='h-24 text-center text-destructive'
+                    >
+                      Failed to load sales. Click Refresh to retry.
+                    </TableCell>
+                  </TableRow>
+                ) : recent.length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={5}
                       className='h-24 text-center text-muted-foreground'
                     >
                       <Ticket className='mx-auto mb-1 size-5 opacity-50' />
-                      No recent sales.
+                      {dailyQuery.isLoading ? 'Loading…' : 'No recent sales.'}
                     </TableCell>
                   </TableRow>
                 ) : (
                   recent.map((sale) => (
                     <TableRow key={sale.id}>
                       <TableCell className='font-mono text-xs'>
-                        {dateFormatter.format(sale.soldAt)}
+                        {dateFormatter.format(new Date(sale.sold_at))}
                       </TableCell>
                       <TableCell className='font-mono text-sm font-semibold'>
                         {sale.username}
                       </TableCell>
                       <TableCell className='text-sm'>
-                        {sale.profileName}
+                        {sale.profile_name}
                       </TableCell>
                       <TableCell className='text-right font-mono text-sm tabular-nums text-emerald-600 dark:text-emerald-400'>
-                        {formatIDR(sale.sellingPrice)}
+                        {formatIDR(sale.selling_price)}
                       </TableCell>
                       <TableCell className='font-mono text-xs'>
                         {sale.server}

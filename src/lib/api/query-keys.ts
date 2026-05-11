@@ -93,20 +93,35 @@ export const qk = {
   scripts: (rid: number) => ['system', 'scripts', rid] as const,
   systemDashboard: (rid: number) => ['system', 'dashboard', rid] as const,
 
+  // ────────────────────────── admin users (real backend, admin-only) ──────────────────────────
+  adminUsers: () => ['admin', 'users'] as const,
+  adminUser: (id: number) => ['admin', 'users', id] as const,
+
   // ────────────────────────── vouchers ──────────────────────────
-  voucherPrintData: (rid: number) =>
-    ['voucher', 'print-data', rid] as const,
+  voucherPrintData: (rid: number, gencode: string) =>
+    ['voucher', 'print-data', rid, gencode] as const,
+  voucherSession: (rid: number, gencode: string) =>
+    ['voucher', 'session', rid, gencode] as const,
+  // Sales listing — params object captured at the end so every combo
+  // caches separately. Prefix invalidation (`['voucher','sales',rid]`)
+  // still wipes every variant after a record/import mutation.
+  salesList: (rid: number, params: QKFilters) =>
+    ['voucher', 'sales', rid, params ?? {}] as const,
 
   // ────────────────────────── templates ──────────────────────────
   templates: (filters?: QKFilters) => ['templates', filters ?? {}] as const,
   template: (id: string) => ['templates', id] as const,
 
   // ────────────────────────── reports ──────────────────────────
-  reportDaily: (rid: number, date: string) =>
-    ['report', 'daily', rid, date] as const,
-  reportMonthly: (rid: number, month: string) =>
-    ['report', 'monthly', rid, month] as const,
-  reportResume: (rid: number) => ['report', 'resume', rid] as const,
+  // Filters (profile/server/search) participate in the key so different
+  // filter combinations cache separately, and prefix invalidation
+  // (`['report','daily', rid]`) still wipes every filter combo.
+  reportDaily: (rid: number, date: string, filters?: QKFilters) =>
+    ['report', 'daily', rid, date, filters ?? {}] as const,
+  reportMonthly: (rid: number, year: number, month: number) =>
+    ['report', 'monthly', rid, year, month] as const,
+  reportResume: (rid: number, year: number) =>
+    ['report', 'resume', rid, year] as const,
   reportSummary: (rid: number) => ['report', 'summary', rid] as const,
 
   // ────────────────────────── quick-print ──────────────────────────

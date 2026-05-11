@@ -1,7 +1,7 @@
 import { useState } from 'react'
+import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useHotspotProfilesStore } from '@/stores/hotspot-profiles-store'
-import { useHotspotUsersStore } from '@/stores/hotspot-users-store'
+import { useActiveRouterId } from '@/stores/active-router-store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,34 +21,46 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { type HotspotUser } from '../data/schema'
+import { useHotspotProfiles } from '@/features/hotspot/profiles/api/queries'
+import { useAddHotspotUser, useUpdateHotspotUser } from '../api/queries'
+import { type HotspotUserViewModel } from '../components/view-model'
 import { useUsersDialogStore } from '../store/users-dialog-store'
 
-const SERVERS = ['all', 'HS-01', 'HS-02', 'HS-03']
+// Local form draft kept in RouterOS-key shape so the body we POST/PUT
+// matches `HotspotUserMutation` (`Record<string, string>`) with zero
+// transformation at submit time.
+type UserDraft = {
+  name: string
+  password: string
+  profile: string
+  server: string
+  'mac-address': string
+  comment: string
+  disabled: 'true' | 'false'
+}
 
-function emptyUser(profileFallback: string): HotspotUser {
+function emptyDraft(profileFallback: string): UserDraft {
   return {
-    id: '',
-    username: '',
+    name: '',
     password: '',
     profile: profileFallback,
-    macAddress: '',
-    ipAddress: undefined,
     server: 'all',
-    status: 'offline',
-    uptime: '—',
-    bytesIn: 0,
-    bytesOut: 0,
+    'mac-address': '',
     comment: '',
-    createdAt: new Date(),
-    expiresAt: undefined,
+    disabled: 'false',
   }
 }
 
-function randomId(): string {
-  return crypto.randomUUID
-    ? crypto.randomUUID()
-    : Date.now().toString(36) + Math.random().toString(36).slice(2)
+function draftFromTarget(target: HotspotUserViewModel): UserDraft {
+  return {
+    name: target.name,
+    password: target.password,
+    profile: target.profile,
+    server: target.server || 'all',
+    'mac-address': target.macAddress,
+    comment: target.comment,
+    disabled: target.enabledStatus === 'disabled' ? 'true' : 'false',
+  }
 }
 
 export function UserMutateDrawer() {
@@ -70,31 +82,37 @@ export function UserMutateDrawer() {
 
 type UserFormProps = {
   mode: 'add' | 'edit'
-  target: HotspotUser | null
+  target: HotspotUserViewModel | null
   onClose: () => void
 }
 
 function UserForm({ mode, target, onClose }: UserFormProps) {
-  const profiles = useHotspotProfilesStore((s) => s.items)
-  const addUser = useHotspotUsersStore((s) => s.add)
-  const updateUser = useHotspotUsersStore((s) => s.update)
-  const profileFallback = profiles[0]?.name ?? '1jam-1k'
+  const routerId = useActiveRouterId() ?? 0
+  const profilesQuery = useHotspotProfiles(routerId)
+  const profiles = profilesQuery.data ?? []
+  const profileFallback = profiles[0]?.name ?? ''
 
-  const [draft, setDraft] = useState<HotspotUser>(() => {
-    if (mode === 'edit' && target) return target
-    return emptyUser(profileFallback)
+  const addMutation = useAddHotspotUser(routerId)
+  const updateMutation = useUpdateHotspotUser(routerId)
+
+  const [draft, setDraft] = useState<UserDraft>(() => {
+    if (mode === 'edit' && target) return draftFromTarget(target)
+    return emptyDraft(profileFallback)
   })
 
-  const update = <K extends keyof HotspotUser>(
-    key: K,
-    value: HotspotUser[K]
-  ) => {
+  const update = <K extends keyof UserDraft>(key: K, value: UserDraft[K]) => {
     setDraft((prev) => ({ ...prev, [key]: value }))
   }
 
+  // The list of known hotspot servers is not exposed as a hook yet — we
+  // hardcode the common defaults plus `all` (the implicit "any server"
+  // value). Once `features/hotspot/servers/` ships a query this becomes
+  // a Select fed by that source.
+  const SERVERS = ['all', 'HS-01', 'HS-02', 'HS-03']
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!draft.username.trim()) {
+    if (!draft.name.trim()) {
       toast.error('Username is required')
       return
     }
@@ -102,125 +120,181 @@ function UserForm({ mode, target, onClose }: UserFormProps) {
       toast.error('Password is required')
       return
     }
-    if (mode === 'add') {
-      addUser({ ...draft, id: randomId(), createdAt: new Date() })
-      toast.success(`User '${draft.username}' added`)
-    } else if (mode === 'edit' && target) {
-      updateUser(target.id, draft)
-      toast.success(`User '${draft.username}' updated`)
+
+    // Strip empty optional fields so the API doesn't receive blank
+    // `mac-address` keys that would override a previously-set MAC on
+    // edit.
+    const payload: Record<string, string> = {
+      name: draft.name.trim(),
+      password: draft.password,
+      profile: draft.profile,
+      server: draft.server,
+      disabled: draft.disabled,
     }
-    onClose()
+    if (draft['mac-address']) payload['mac-address'] = draft['mac-address']
+    if (draft.comment) payload.comment = draft.comment
+
+    if (mode === 'add') {
+      addMutation.mutate(payload, {
+        onSuccess: () => {
+          toast.success(`User '${draft.name}' added`)
+          onClose()
+        },
+        onError: (err) => {
+          toast.error('Failed to add user', {
+            description: err instanceof Error ? err.message : String(err),
+          })
+        },
+      })
+    } else if (target) {
+      updateMutation.mutate(
+        { id: target.id, patch: payload },
+        {
+          onSuccess: () => {
+            toast.success(`User '${draft.name}' updated`)
+            onClose()
+          },
+          onError: (err) => {
+            toast.error('Failed to update user', {
+              description: err instanceof Error ? err.message : String(err),
+            })
+          },
+        },
+      )
+    }
   }
+
+  const isPending = addMutation.isPending || updateMutation.isPending
 
   return (
     <SheetContent className='flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-md'>
-        <SheetHeader className='border-b'>
-          <SheetTitle>
-            {mode === 'add' ? 'Add Hotspot User' : 'Edit Hotspot User'}
-          </SheetTitle>
-          <SheetDescription>
-            Single hotspot user · credentials · profile
-          </SheetDescription>
-        </SheetHeader>
+      <SheetHeader className='border-b'>
+        <SheetTitle>
+          {mode === 'add' ? 'Add Hotspot User' : 'Edit Hotspot User'}
+        </SheetTitle>
+        <SheetDescription>
+          Single hotspot user · credentials · profile
+        </SheetDescription>
+      </SheetHeader>
 
-        <form
-          id='user-form'
-          className='flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4'
-          onSubmit={handleSubmit}
-        >
-          <div className='grid grid-cols-2 gap-3'>
-            <Field label='Username'>
-              <Input
-                value={draft.username}
-                onChange={(e) => update('username', e.target.value)}
-                placeholder='wifi-001'
-              />
-            </Field>
-            <Field label='Password'>
-              <Input
-                value={draft.password}
-                onChange={(e) => update('password', e.target.value)}
-                placeholder='••••'
-              />
-            </Field>
-          </div>
-
-          <Field label='Profile'>
-            <Select
-              value={draft.profile}
-              onValueChange={(v) => update('profile', v)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {profiles.map((p) => (
-                  <SelectItem key={p.id} value={p.name}>
-                    {p.name} · {p.validity}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-
-          <Field label='Server'>
-            <Select
-              value={draft.server}
-              onValueChange={(v) => update('server', v)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {SERVERS.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-
-          <div className='grid grid-cols-2 gap-3'>
-            <Field label='MAC Address'>
-              <Input
-                value={draft.macAddress}
-                onChange={(e) =>
-                  update('macAddress', e.target.value.toUpperCase())
-                }
-                placeholder='AA:BB:CC:DD:EE:FF'
-              />
-            </Field>
-            <Field label='IP Address'>
-              <Input
-                value={draft.ipAddress ?? ''}
-                onChange={(e) =>
-                  update('ipAddress', e.target.value || undefined)
-                }
-                placeholder='192.168.10.10'
-              />
-            </Field>
-          </div>
-
-          <Field label='Comment'>
+      <form
+        id='user-form'
+        className='flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4'
+        onSubmit={handleSubmit}
+      >
+        <div className='grid grid-cols-2 gap-3'>
+          <Field label='Username'>
             <Input
-              value={draft.comment ?? ''}
-              onChange={(e) => update('comment', e.target.value)}
-              placeholder='Optional'
+              value={draft.name}
+              onChange={(e) => update('name', e.target.value)}
+              placeholder='wifi-001'
+              autoComplete='off'
             />
           </Field>
-        </form>
+          <Field label='Password'>
+            <Input
+              value={draft.password}
+              onChange={(e) => update('password', e.target.value)}
+              placeholder='••••'
+              autoComplete='off'
+            />
+          </Field>
+        </div>
 
-        <SheetFooter className='border-t'>
-          <SheetClose asChild>
-            <Button variant='outline' size='sm'>
-              Cancel
-            </Button>
-          </SheetClose>
-          <Button type='submit' size='sm' form='user-form'>
-            {mode === 'add' ? 'Add User' : 'Save Changes'}
+        <Field label='Profile'>
+          <Select
+            value={draft.profile}
+            onValueChange={(v) => update('profile', v)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder='Select a profile' />
+            </SelectTrigger>
+            <SelectContent>
+              {profiles.length === 0 ? (
+                <SelectItem value='__none' disabled>
+                  No profiles available
+                </SelectItem>
+              ) : (
+                profiles.map((p) => (
+                  <SelectItem key={p.id} value={p.name}>
+                    {p.name}
+                    {p.validity ? ` · ${p.validity}` : ''}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
+        </Field>
+
+        <Field label='Server'>
+          <Select
+            value={draft.server}
+            onValueChange={(v) => update('server', v)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {SERVERS.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {s}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+
+        <Field label='MAC Address'>
+          <Input
+            value={draft['mac-address']}
+            onChange={(e) =>
+              update('mac-address', e.target.value.toUpperCase())
+            }
+            placeholder='AA:BB:CC:DD:EE:FF'
+          />
+        </Field>
+
+        <Field label='Status'>
+          <Select
+            value={draft.disabled}
+            onValueChange={(v) => update('disabled', v as 'true' | 'false')}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value='false'>Enabled</SelectItem>
+              <SelectItem value='true'>Disabled</SelectItem>
+            </SelectContent>
+          </Select>
+        </Field>
+
+        <Field label='Comment'>
+          <Input
+            value={draft.comment}
+            onChange={(e) => update('comment', e.target.value)}
+            placeholder='Optional'
+          />
+        </Field>
+      </form>
+
+      <SheetFooter className='border-t'>
+        <SheetClose asChild>
+          <Button variant='outline' size='sm' disabled={isPending}>
+            Cancel
           </Button>
-        </SheetFooter>
+        </SheetClose>
+        <Button
+          type='submit'
+          size='sm'
+          form='user-form'
+          disabled={isPending}
+          className='gap-1.5'
+        >
+          {isPending && <Loader2 className='size-4 animate-spin' />}
+          {mode === 'add' ? 'Add User' : 'Save Changes'}
+        </Button>
+      </SheetFooter>
     </SheetContent>
   )
 }

@@ -1,17 +1,64 @@
-import { Plus, RefreshCw } from 'lucide-react'
+import { useMemo } from 'react'
+import { Loader2, Plus, RefreshCw, ServerOff, Wand2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useHotspotProfilesStore } from '@/stores/hotspot-profiles-store'
+import { useActiveRouterId } from '@/stores/active-router-store'
 import { Button } from '@/components/ui/button'
 import { Main } from '@/components/layout/main'
+import {
+  useHotspotProfiles,
+  useSyncHotspotProfiles,
+} from './api/queries'
 import { HotspotProfilesTable } from './components/hotspot-profiles-table'
+import { toProfileViewModel } from './components/view-model'
 import { ProfileDialogs } from './dialogs/profile-dialogs'
 import { useProfilesDialogStore } from './store/profiles-dialog-store'
 
 export function HotspotProfiles() {
-  const hotspotProfiles = useHotspotProfilesStore((s) => s.items)
+  const routerId = useActiveRouterId()
+  const profilesQuery = useHotspotProfiles(routerId ?? 0)
+  const syncMutation = useSyncHotspotProfiles(routerId ?? 0)
   const openDialog = useProfilesDialogStore((s) => s.open)
-  const totalCount = hotspotProfiles.length
-  const monitorCount = hotspotProfiles.filter((p) => p.hasExpiredMonitor).length
+
+  const viewModels = useMemo(
+    () => (profilesQuery.data ?? []).map(toProfileViewModel),
+    [profilesQuery.data],
+  )
+
+  const totalCount = viewModels.length
+  const monitorCount = viewModels.filter((p) => p.hasExpiredMonitor).length
+
+  const handleRefresh = () => {
+    profilesQuery.refetch()
+    toast.info('Refreshing profiles…')
+  }
+
+  const handleSync = () => {
+    syncMutation.mutate(undefined, {
+      onSuccess: (res) => {
+        toast.success('Profiles synced from RouterOS', {
+          description: `${res.mappings_synced} mappings · ${res.scripts_updated} scripts updated · ${res.scripts_skipped} skipped`,
+        })
+      },
+      onError: (err) => {
+        toast.error('Failed to sync profiles', {
+          description: err instanceof Error ? err.message : String(err),
+        })
+      },
+    })
+  }
+
+  if (routerId == null) {
+    return (
+      <Main className='flex flex-1 flex-col items-center justify-center gap-3 text-center'>
+        <ServerOff className='size-10 text-muted-foreground' />
+        <h2 className='text-xl font-bold tracking-tight'>No router selected</h2>
+        <p className='max-w-sm text-sm text-muted-foreground'>
+          Select a router from the sidebar switcher to view its hotspot
+          profiles.
+        </p>
+      </Main>
+    )
+  }
 
   return (
     <Main className='flex flex-1 flex-col gap-3 sm:gap-6'>
@@ -24,18 +71,34 @@ export function HotspotProfiles() {
             {totalCount} profiles · {monitorCount} with active expired monitor
           </p>
         </div>
-        <div className='flex gap-2'>
+        <div className='flex flex-wrap gap-2'>
           <Button
             variant='outline'
             size='sm'
-            onClick={() =>
-              toast.info('Refreshed', {
-                description: 'Profile list refreshed from RouterOS.',
-              })
-            }
+            onClick={handleRefresh}
+            disabled={profilesQuery.isFetching}
+            className='gap-1.5'
           >
-            <RefreshCw className='size-4' />
+            {profilesQuery.isFetching ? (
+              <Loader2 className='size-4 animate-spin' />
+            ) : (
+              <RefreshCw className='size-4' />
+            )}
             Refresh
+          </Button>
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={handleSync}
+            disabled={syncMutation.isPending}
+            className='gap-1.5'
+          >
+            {syncMutation.isPending ? (
+              <Loader2 className='size-4 animate-spin' />
+            ) : (
+              <Wand2 className='size-4' />
+            )}
+            Sync from RouterOS
           </Button>
           <Button
             size='sm'
@@ -47,7 +110,13 @@ export function HotspotProfiles() {
           </Button>
         </div>
       </div>
-      <HotspotProfilesTable data={hotspotProfiles} />
+      {profilesQuery.isError ? (
+        <div className='rounded-md border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive'>
+          Failed to load profiles. Click Refresh to retry.
+        </div>
+      ) : (
+        <HotspotProfilesTable data={viewModels} />
+      )}
       <ProfileDialogs />
     </Main>
   )

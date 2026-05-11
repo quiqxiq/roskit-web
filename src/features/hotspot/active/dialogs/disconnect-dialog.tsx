@@ -1,5 +1,5 @@
 import { toast } from 'sonner'
-import { useHotspotActiveStore } from '@/stores/hotspot-active-store'
+import { useActiveRouterId } from '@/stores/active-router-store'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,46 +10,77 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  useDisconnectHotspotUser,
+  useHotspotActive,
+} from '../api/queries'
 import { useActiveDialogStore } from '../store/active-dialog-store'
 
 export function DisconnectDialog() {
   const { mode, target, ids, close } = useActiveDialogStore()
-  const sessions = useHotspotActiveStore((s) => s.items)
-  const remove = useHotspotActiveStore((s) => s.remove)
-  const removeMany = useHotspotActiveStore((s) => s.removeMany)
+  const routerId = useActiveRouterId() ?? 0
+  // Used only to enumerate IDs for "disconnect all" — we read the
+  // cached list rather than passing it through the dialog store so the
+  // page header can stay slim.
+  const activeQuery = useHotspotActive(routerId)
+  const disconnectMutation = useDisconnectHotspotUser(routerId)
 
   const isOpen =
     mode === 'disconnect' ||
     mode === 'disconnect-many' ||
     mode === 'disconnect-all'
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (mode === 'disconnect' && target) {
-      remove(target.id)
-      toast.success(`${target.user} disconnected`)
-    } else if (mode === 'disconnect-many' && ids.length > 0) {
-      removeMany(ids)
-      toast.success(
-        `Disconnected ${ids.length} session${ids.length > 1 ? 's' : ''}`
+      try {
+        await disconnectMutation.mutateAsync(target.id)
+        toast.success(`${target.user || 'session'} disconnected`)
+      } catch (err) {
+        toast.error('Failed to disconnect', {
+          description: err instanceof Error ? err.message : String(err),
+        })
+      }
+      close()
+      return
+    }
+    const targetIds =
+      mode === 'disconnect-all'
+        ? (activeQuery.data ?? []).map((s) => s['.id'])
+        : ids
+    if (targetIds.length === 0) {
+      close()
+      return
+    }
+    const results = await Promise.allSettled(
+      targetIds.map((id) => disconnectMutation.mutateAsync(id)),
+    )
+    const failed = results.filter((r) => r.status === 'rejected').length
+    const ok = results.length - failed
+    if (failed === 0) {
+      toast.success(`Disconnected ${ok} session${ok > 1 ? 's' : ''}`)
+    } else if (ok === 0) {
+      toast.error(
+        `Failed to disconnect ${failed} session${failed > 1 ? 's' : ''}`,
       )
-    } else if (mode === 'disconnect-all') {
-      const allIds = sessions.map((s) => s.id)
-      removeMany(allIds)
-      toast.success(`Disconnected all ${allIds.length} sessions`)
+    } else {
+      toast.warning(
+        `Disconnected ${ok}, failed ${failed} of ${results.length} sessions`,
+      )
     }
     close()
   }
 
+  const allCount = activeQuery.data?.length ?? 0
   const titleCount =
     mode === 'disconnect-all'
-      ? sessions.length
+      ? allCount
       : mode === 'disconnect-many'
         ? ids.length
         : 1
 
   const title =
     mode === 'disconnect-all'
-      ? `Disconnect all ${sessions.length} sessions?`
+      ? `Disconnect all ${allCount} sessions?`
       : mode === 'disconnect-many'
         ? `Disconnect ${ids.length} session${ids.length > 1 ? 's' : ''}?`
         : 'Disconnect session?'
@@ -60,7 +91,7 @@ export function DisconnectDialog() {
       : mode === 'disconnect-many'
         ? 'Selected sessions will be terminated. Affected users must log in again.'
         : target
-          ? `Session for ${target.user} (${target.address}) will be terminated.`
+          ? `Session for ${target.user || 'this user'} (${target.address || 'no address'}) will be terminated.`
           : 'This session will be terminated.'
 
   return (
@@ -71,10 +102,12 @@ export function DisconnectDialog() {
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={disconnectMutation.isPending}>
+            Cancel
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirm}
-            disabled={titleCount === 0}
+            disabled={titleCount === 0 || disconnectMutation.isPending}
             className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
           >
             Disconnect

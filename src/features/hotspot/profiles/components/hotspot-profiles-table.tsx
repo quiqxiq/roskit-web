@@ -37,12 +37,21 @@ import {
   monitorOptions,
   expModeOptions,
 } from '../data/data'
-import { type HotspotProfile } from '../data/schema'
+import { type ExpMode } from '../data/schema'
+import { type HotspotProfileViewModel } from './view-model'
 import { columns } from './columns'
 import { DataTableRowActions } from './data-table-row-actions'
 
 type HotspotProfilesTableProps = {
-  data: HotspotProfile[]
+  data: HotspotProfileViewModel[]
+}
+
+// Mirror of the helper in `columns.tsx` so the mobile card matches the
+// table's behaviour for unknown exp_mode values from RouterOS.
+function labelForExpMode(value: string): string {
+  return value in expModeLabels
+    ? expModeLabels[value as ExpMode]
+    : value || '—'
 }
 
 export function HotspotProfilesTable({ data }: HotspotProfilesTableProps) {
@@ -182,14 +191,14 @@ export function HotspotProfilesTable({ data }: HotspotProfilesTableProps) {
                   variant='outline'
                   className='shrink-0 text-[10px] font-normal'
                 >
-                  {expModeLabels[profile.expMode]}
+                  {labelForExpMode(profile.expMode)}
                 </Badge>
               </div>
             )
           }}
           renderMeta={(row) => (
             <span className='font-mono'>
-              {row.original.rateLimit} · {row.original.validity}
+              {row.original.rateLimit || '—'} · {row.original.validity || '—'}
             </span>
           )}
           renderDetails={(row): MobileCardDetail[] => {
@@ -214,7 +223,9 @@ export function HotspotProfilesTable({ data }: HotspotProfilesTableProps) {
               {
                 label: 'Shared',
                 value: (
-                  <span className='font-mono'>{profile.sharedUsers}</span>
+                  <span className='font-mono'>
+                    {profile.sharedUsers || '—'}
+                  </span>
                 ),
               },
               {

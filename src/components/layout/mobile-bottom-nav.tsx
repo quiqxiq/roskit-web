@@ -52,6 +52,7 @@ const NAV_ITEMS: NavItemConfig[] = [
     children: [
       { title: 'Generate', url: '/voucher/generate' },
       { title: 'Print Queue', url: '/voucher/print' },
+      { title: 'Sales', url: '/voucher/sales' },
     ],
   },
   {

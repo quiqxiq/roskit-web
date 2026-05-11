@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   type SortingState,
   type VisibilityState,
@@ -31,14 +31,22 @@ import {
   type MobileCardDetail,
 } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
-import { formatBytes, profileOptions, serverOptions, statusOptions } from '../data/data'
-import { type HotspotUser } from '../data/schema'
+import { formatBytes } from '../../_shared/format'
+import { type HotspotUserViewModel } from './view-model'
 import { columns } from './columns'
 import { DataTableRowActions } from './data-table-row-actions'
 
 type HotspotUsersTableProps = {
-  data: HotspotUser[]
+  data: HotspotUserViewModel[]
 }
+
+// Static filter facet for the enabled-status column. Profile and server
+// facets are derived from the actual data so they reflect what's on the
+// router instead of a stale hardcoded list.
+const ENABLED_OPTIONS = [
+  { label: 'Enabled', value: 'enabled' },
+  { label: 'Disabled', value: 'disabled' },
+]
 
 export function HotspotUsersTable({ data }: HotspotUsersTableProps) {
   const openDialog = useUsersDialogStore((s) => s.open)
@@ -46,6 +54,23 @@ export function HotspotUsersTable({ data }: HotspotUsersTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
+
+  // Derive distinct profile/server options from the data we're rendering
+  // so filters never get stuck on values that no longer exist.
+  const profileOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const u of data) if (u.profile) set.add(u.profile)
+    return Array.from(set)
+      .sort()
+      .map((v) => ({ label: v, value: v }))
+  }, [data])
+  const serverOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const u of data) if (u.server) set.add(u.server)
+    return Array.from(set)
+      .sort()
+      .map((v) => ({ label: v, value: v }))
+  }, [data])
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -79,12 +104,12 @@ export function HotspotUsersTable({ data }: HotspotUsersTableProps) {
       <DataTableToolbar
         table={table}
         searchPlaceholder='Search users...'
-        searchKey='username'
+        searchKey='name'
         filters={[
           {
-            columnId: 'status',
+            columnId: 'enabledStatus',
             title: 'Status',
-            options: statusOptions,
+            options: ENABLED_OPTIONS,
           },
           {
             columnId: 'profile',
@@ -165,35 +190,35 @@ export function HotspotUsersTable({ data }: HotspotUsersTableProps) {
             return (
               <div className='flex min-w-0 items-start gap-2'>
                 <span className='min-w-0 flex-1 truncate font-semibold'>
-                  {user.username}
+                  {user.name}
                 </span>
                 <Badge
-                  variant={user.status}
+                  variant={user.enabledStatus === 'enabled' ? 'online' : 'offline'}
                   className='shrink-0 text-[10px] capitalize'
                 >
-                  {user.status}
+                  {user.enabledStatus}
                 </Badge>
               </div>
             )
           }}
           renderMeta={(row) => (
-            <span className='font-mono'>{row.original.profile}</span>
+            <span className='font-mono'>{row.original.profile || '—'}</span>
           )}
           renderDetails={(row): MobileCardDetail[] => {
             const user = row.original
-            const isActive = user.status === 'online' || user.status === 'idle'
+            const hasTraffic = user.bytesIn + user.bytesOut > 0
             return [
               {
                 label: 'MAC',
                 value: (
                   <span className='font-mono text-[11px]'>
-                    {user.macAddress}
+                    {user.macAddress || '—'}
                   </span>
                 ),
               },
               {
                 label: 'Server',
-                value: <span className='font-mono'>{user.server}</span>,
+                value: <span className='font-mono'>{user.server || '—'}</span>,
               },
               {
                 label: 'Uptime',
@@ -201,16 +226,33 @@ export function HotspotUsersTable({ data }: HotspotUsersTableProps) {
                   <span
                     className={cn(
                       'font-mono',
-                      user.uptime === '—' && 'text-muted-foreground'
+                      !user.uptime && 'text-muted-foreground'
                     )}
                   >
-                    {user.uptime}
+                    {user.uptime || '—'}
                   </span>
                 ),
               },
               {
+                label: 'Expiry',
+                value: user.expiry ? (
+                  <div className='flex items-center gap-1.5'>
+                    <span className='font-mono text-[11px]'>
+                      {user.expiry.at.toLocaleDateString()}
+                    </span>
+                    {user.expiry.isPast && (
+                      <Badge variant='expired' className='text-[10px]'>
+                        Expired
+                      </Badge>
+                    )}
+                  </div>
+                ) : (
+                  <span className='text-muted-foreground'>—</span>
+                ),
+              },
+              {
                 label: 'Traffic',
-                value: isActive ? (
+                value: hasTraffic ? (
                   <span className='font-mono text-[11px]'>
                     <span className='text-sky-600 dark:text-sky-400'>
                       ↓{formatBytes(user.bytesIn)}

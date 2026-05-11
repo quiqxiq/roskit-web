@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   type ColumnFiltersState,
   type SortingState,
@@ -31,13 +31,12 @@ import {
   type MobileCardDetail,
 } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
-import { formatBytes, loginByOptions, serverOptions } from '../data/data'
-import { type HotspotActive } from '../data/schema'
+import { type HotspotActiveViewModel } from './view-model'
 import { columns } from './columns'
 import { DataTableRowActions } from './data-table-row-actions'
 
 type HotspotActiveTableProps = {
-  data: HotspotActive[]
+  data: HotspotActiveViewModel[]
 }
 
 export function HotspotActiveTable({ data }: HotspotActiveTableProps) {
@@ -46,6 +45,19 @@ export function HotspotActiveTable({ data }: HotspotActiveTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
+
+  // Distinct server/loginBy facets derived from rendered data so filters
+  // never include stale options when sessions churn.
+  const serverOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const s of data) if (s.server) set.add(s.server)
+    return Array.from(set).sort().map((v) => ({ label: v, value: v }))
+  }, [data])
+  const loginByOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const s of data) if (s.loginBy) set.add(s.loginBy)
+    return Array.from(set).sort().map((v) => ({ label: v, value: v }))
+  }, [data])
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -163,19 +175,19 @@ export function HotspotActiveTable({ data }: HotspotActiveTableProps) {
             return (
               <div className='flex min-w-0 items-start gap-2'>
                 <span className='min-w-0 flex-1 truncate font-semibold'>
-                  {session.user}
+                  {session.user || '—'}
                 </span>
                 <Badge
                   variant='outline'
                   className='shrink-0 text-[10px] font-mono'
                 >
-                  {session.server}
+                  {session.server || '—'}
                 </Badge>
               </div>
             )
           }}
           renderMeta={(row) => (
-            <span className='font-mono'>{row.original.address}</span>
+            <span className='font-mono'>{row.original.address || '—'}</span>
           )}
           renderDetails={(row): MobileCardDetail[] => {
             const s = row.original
@@ -183,29 +195,24 @@ export function HotspotActiveTable({ data }: HotspotActiveTableProps) {
               {
                 label: 'MAC',
                 value: (
-                  <span className='font-mono text-[11px]'>{s.macAddress}</span>
+                  <span className='font-mono text-[11px]'>
+                    {s.macAddress || '—'}
+                  </span>
                 ),
               },
               {
                 label: 'Uptime',
-                value: <span className='font-mono'>{s.uptime}</span>,
+                value: <span className='font-mono'>{s.uptime || '—'}</span>,
               },
               {
                 label: 'Time Left',
-                value: <span className='font-mono'>{s.sessionTimeLeft}</span>,
+                value: (
+                  <span className='font-mono'>{s.sessionTimeLeft || '—'}</span>
+                ),
               },
               {
-                label: 'Traffic',
-                value: (
-                  <span className='font-mono text-[11px]'>
-                    <span className='text-sky-600 dark:text-sky-400'>
-                      ↓{formatBytes(s.bytesIn)}
-                    </span>{' '}
-                    <span className='text-violet-600 dark:text-violet-400'>
-                      ↑{formatBytes(s.bytesOut)}
-                    </span>
-                  </span>
-                ),
+                label: 'Login By',
+                value: <span className='font-mono'>{s.loginBy || '—'}</span>,
               },
             ]
           }}

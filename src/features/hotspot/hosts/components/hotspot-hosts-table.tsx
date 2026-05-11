@@ -31,19 +31,20 @@ import {
   type MobileCardDetail,
 } from '@/components/data-table'
 import { Badge } from '@/components/ui/badge'
-import { hostFlags, serverOptions } from '../data/data'
-import { type HostFilter, type HotspotHost } from '../data/schema'
+import { type HotspotHostViewModel } from './view-model'
 import { columns } from './columns'
 import { DataTableRowActions } from './data-table-row-actions'
 
 type HotspotHostsTableProps = {
-  data: HotspotHost[]
+  data: HotspotHostViewModel[]
 }
+
+type HostFilter = 'all' | 'authorized' | 'unauthorized'
 
 const FILTER_TABS: Array<{ value: HostFilter; label: string }> = [
   { value: 'all', label: 'All' },
   { value: 'authorized', label: 'Authorized' },
-  { value: 'bypassed', label: 'Bypassed' },
+  { value: 'unauthorized', label: 'Unauthorized' },
 ]
 
 export function HotspotHostsTable({ data }: HotspotHostsTableProps) {
@@ -54,11 +55,21 @@ export function HotspotHostsTable({ data }: HotspotHostsTableProps) {
   const [sorting, setSorting] = useState<SortingState>([])
   const [hostFilter, setHostFilter] = useState<HostFilter>('all')
 
+  // Quick-filter tabs gate the dataset before TanStack does its own
+  // column filtering. Keeps faceted counts honest for the active scope.
   const filteredData = useMemo(() => {
     if (hostFilter === 'authorized') return data.filter((h) => h.authorized)
-    if (hostFilter === 'bypassed') return data.filter((h) => h.bypassed)
+    if (hostFilter === 'unauthorized')
+      return data.filter((h) => !h.authorized)
     return data
   }, [data, hostFilter])
+
+  // Distinct server facets from the (post-tab) data.
+  const serverOptions = useMemo(() => {
+    const set = new Set<string>()
+    for (const h of filteredData) if (h.server) set.add(h.server)
+    return Array.from(set).sort().map((v) => ({ label: v, value: v }))
+  }, [filteredData])
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -85,7 +96,8 @@ export function HotspotHostsTable({ data }: HotspotHostsTableProps) {
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
 
-  const selectedCount = table.getFilteredSelectedRowModel().rows.length
+  const selectedRows = table.getFilteredSelectedRowModel().rows
+  const selectedCount = selectedRows.length
 
   return (
     <div className='flex flex-1 flex-col gap-4'>
@@ -180,47 +192,36 @@ export function HotspotHostsTable({ data }: HotspotHostsTableProps) {
           table={table}
           renderPrimary={(row) => {
             const host = row.original
-            const flags = hostFlags(host)
             return (
               <div className='flex min-w-0 items-start gap-2'>
                 <span className='min-w-0 flex-1 truncate font-mono text-[12px] font-semibold'>
-                  {host.macAddress}
+                  {host.macAddress || '—'}
                 </span>
-                <div className='flex shrink-0 flex-wrap gap-1'>
-                  {flags.length === 0 ? (
-                    <span className='text-[10px] text-muted-foreground'>—</span>
-                  ) : (
-                    flags.map((f) => (
-                      <Badge
-                        key={f.label}
-                        variant='outline'
-                        title={f.title}
-                        className={cn(
-                          'h-4 px-1 font-mono text-[10px]',
-                          f.className
-                        )}
-                      >
-                        {f.label}
-                      </Badge>
-                    ))
-                  )}
-                </div>
+                {host.authorized ? (
+                  <Badge variant='online' className='shrink-0 text-[10px]'>
+                    auth
+                  </Badge>
+                ) : (
+                  <Badge variant='outline' className='shrink-0 text-[10px]'>
+                    —
+                  </Badge>
+                )}
               </div>
             )
           }}
           renderMeta={(row) => (
-            <span className='font-mono'>{row.original.address}</span>
+            <span className='font-mono'>{row.original.address || '—'}</span>
           )}
           renderDetails={(row): MobileCardDetail[] => {
             const host = row.original
             return [
               {
                 label: 'Server',
-                value: <span className='font-mono'>{host.server}</span>,
+                value: <span className='font-mono'>{host.server || '—'}</span>,
               },
               {
                 label: 'To Address',
-                value: <span className='font-mono'>{host.toAddress}</span>,
+                value: <span className='font-mono'>{host.toAddress || '—'}</span>,
               },
               {
                 label: 'Comment',
@@ -242,10 +243,11 @@ export function HotspotHostsTable({ data }: HotspotHostsTableProps) {
               size='sm'
               className='gap-1.5'
               onClick={() => {
-                const ids = table
-                  .getFilteredSelectedRowModel()
-                  .rows.map((r) => r.original.id)
-                openDialog('bind-many', { ids })
+                const selected = selectedRows.map((r) => r.original)
+                openDialog('bind-many', {
+                  ids: selected.map((h) => h.id),
+                  bulk: selected,
+                })
                 table.resetRowSelection()
               }}
             >
@@ -257,9 +259,7 @@ export function HotspotHostsTable({ data }: HotspotHostsTableProps) {
               size='sm'
               className='gap-1.5'
               onClick={() => {
-                const ids = table
-                  .getFilteredSelectedRowModel()
-                  .rows.map((r) => r.original.id)
+                const ids = selectedRows.map((r) => r.original.id)
                 openDialog('multi-delete', { ids })
                 table.resetRowSelection()
               }}

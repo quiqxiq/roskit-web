@@ -1,15 +1,15 @@
 import { create } from 'zustand'
-import { type HotspotActive } from '../data/schema'
+import { type HotspotActiveViewModel } from '../components/view-model'
 
 type DialogMode = 'disconnect' | 'disconnect-many' | 'disconnect-all' | null
 
 type ActiveDialogState = {
   mode: DialogMode
-  target: HotspotActive | null
+  target: HotspotActiveViewModel | null
   ids: string[]
   open: (
     mode: Exclude<DialogMode, null>,
-    payload?: { target?: HotspotActive; ids?: string[] }
+    payload?: { target?: HotspotActiveViewModel; ids?: string[] }
   ) => void
   close: () => void
 }

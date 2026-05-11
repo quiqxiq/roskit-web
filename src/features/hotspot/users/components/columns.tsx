@@ -3,18 +3,18 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
-import { formatBytes } from '../data/data'
-import { type HotspotUser } from '../data/schema'
+import { formatBytes } from '../../_shared/format'
+import { type HotspotUserViewModel } from './view-model'
 import { DataTableRowActions } from './data-table-row-actions'
 
-const statusIcon: Record<string, string> = {
-  online: '●',
-  expired: '●',
-  idle: '●',
-  offline: '●',
-}
+// Date formatter for the Expiry column. Short, scannable, locale-aware.
+const dateFmt = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: '2-digit',
+  year: 'numeric',
+})
 
-export const columns: ColumnDef<HotspotUser>[] = [
+export const columns: ColumnDef<HotspotUserViewModel>[] = [
   {
     id: 'select',
     header: ({ table }) => (
@@ -40,15 +40,15 @@ export const columns: ColumnDef<HotspotUser>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: 'status',
+    accessorKey: 'enabledStatus',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Status' />
     ),
     cell: ({ row }) => {
-      const status = row.getValue('status') as string
+      const status = row.original.enabledStatus
       return (
-        <Badge variant={status as 'online' | 'expired' | 'idle' | 'offline'}>
-          <span className='text-[8px]'>{statusIcon[status]}</span>
+        <Badge variant={status === 'enabled' ? 'online' : 'offline'}>
+          <span className='text-[8px]'>●</span>
           {status}
         </Badge>
       )
@@ -58,12 +58,12 @@ export const columns: ColumnDef<HotspotUser>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: 'username',
+    accessorKey: 'name',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Username' />
     ),
     cell: ({ row }) => (
-      <span className='font-semibold'>{row.getValue('username')}</span>
+      <span className='font-semibold'>{row.original.name}</span>
     ),
     enableHiding: false,
   },
@@ -73,7 +73,7 @@ export const columns: ColumnDef<HotspotUser>[] = [
       <DataTableColumnHeader column={column} title='Profile' />
     ),
     cell: ({ row }) => (
-      <span className='font-mono text-sm'>{row.getValue('profile')}</span>
+      <span className='font-mono text-sm'>{row.original.profile || '—'}</span>
     ),
     filterFn: (row, id, value) => value.includes(row.getValue(id)),
   },
@@ -83,7 +83,9 @@ export const columns: ColumnDef<HotspotUser>[] = [
       <DataTableColumnHeader column={column} title='MAC Address' />
     ),
     cell: ({ row }) => (
-      <span className='font-mono text-sm'>{row.getValue('macAddress')}</span>
+      <span className='font-mono text-sm'>
+        {row.original.macAddress || '—'}
+      </span>
     ),
   },
   {
@@ -91,7 +93,7 @@ export const columns: ColumnDef<HotspotUser>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Server' />
     ),
-    cell: ({ row }) => <span>{row.getValue('server')}</span>,
+    cell: ({ row }) => <span>{row.original.server || '—'}</span>,
     filterFn: (row, id, value) => value.includes(row.getValue(id)),
   },
   {
@@ -99,25 +101,45 @@ export const columns: ColumnDef<HotspotUser>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Uptime' />
     ),
-    cell: ({ row }) => (
-      <span className={cn('font-mono text-sm', row.getValue('uptime') === '—' && 'text-muted-foreground')}>
-        {row.getValue('uptime')}
-      </span>
+    cell: ({ row }) => {
+      const v = row.original.uptime
+      return (
+        <span className={cn('font-mono text-sm', !v && 'text-muted-foreground')}>
+          {v || '—'}
+        </span>
+      )
+    },
+  },
+  {
+    id: 'expiry',
+    accessorFn: (row) => row.expiry?.at.getTime() ?? 0,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Expiry' />
     ),
+    cell: ({ row }) => {
+      const exp = row.original.expiry
+      if (!exp) return <span className='text-muted-foreground'>—</span>
+      return (
+        <div className='flex flex-col gap-0.5'>
+          <span className='font-mono text-xs'>{dateFmt.format(exp.at)}</span>
+          {exp.isPast && (
+            <Badge variant='expired' className='w-fit text-[10px]'>
+              Expired
+            </Badge>
+          )}
+        </div>
+      )
+    },
   },
   {
     id: 'bytesTotal',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Traffic' />
     ),
-    accessorFn: (row) =>
-      row.status === 'online' || row.status === 'idle'
-        ? `↓${formatBytes(row.bytesIn)} ↑${formatBytes(row.bytesOut)}`
-        : '—',
+    accessorFn: (row) => row.bytesIn + row.bytesOut,
     cell: ({ row }) => {
-      const { bytesIn, bytesOut, status } = row.original
-      const isActive = status === 'online' || status === 'idle'
-      if (!isActive) {
+      const { bytesIn, bytesOut } = row.original
+      if (bytesIn + bytesOut === 0) {
         return <span className='text-muted-foreground'>—</span>
       }
       return (

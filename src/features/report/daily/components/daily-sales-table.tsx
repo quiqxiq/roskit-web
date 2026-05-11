@@ -1,6 +1,5 @@
-import { Search, Trash2 } from 'lucide-react'
-import { useSalesDialogStore } from '@/features/voucher/sales/store/sales-dialog-store'
-import { type VoucherSale } from '@/features/voucher/data/sales'
+import { Search } from 'lucide-react'
+import type { VoucherSale } from '@/features/voucher/sales/api/schema'
 import { cn } from '@/lib/utils'
 import { formatIDR } from '@/lib/format'
 import { Badge } from '@/components/ui/badge'
@@ -21,13 +20,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { type DailySaleFilters } from '../data/schema'
+
+type DailySalesTableFilters = {
+  search: string
+  profile: string
+  server: string
+}
 
 type DailySalesTableProps = {
   sales: VoucherSale[]
   filteredSales: VoucherSale[]
-  filters: DailySaleFilters
-  onFiltersChange: (next: DailySaleFilters) => void
+  filters: DailySalesTableFilters
+  onFiltersChange: (next: DailySalesTableFilters) => void
 }
 
 const timeFormatter = new Intl.DateTimeFormat('id-ID', {
@@ -43,9 +47,10 @@ export function DailySalesTable({
   filters,
   onFiltersChange,
 }: DailySalesTableProps) {
-  const openDialog = useSalesDialogStore((s) => s.open)
-
-  const profiles = Array.from(new Set(sales.map((s) => s.profileName))).sort()
+  // Profile/server option lists are derived from the unfiltered set so
+  // they stay stable as the user narrows the filter — picking "all" then
+  // "profile X" must always show every profile that exists for the day.
+  const profiles = Array.from(new Set(sales.map((s) => s.profile_name))).sort()
   const servers = Array.from(new Set(sales.map((s) => s.server))).sort()
 
   return (
@@ -123,14 +128,13 @@ export function DailySalesTable({
                 <TableHead>Server</TableHead>
                 <TableHead>IP</TableHead>
                 <TableHead>MAC</TableHead>
-                <TableHead className='w-[60px]' />
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredSales.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={9}
+                    colSpan={8}
                     className='h-24 text-center text-muted-foreground'
                   >
                     No sales for the current filter.
@@ -140,18 +144,18 @@ export function DailySalesTable({
                 filteredSales.map((sale) => (
                   <TableRow key={sale.id}>
                     <TableCell className='font-mono text-xs'>
-                      {timeFormatter.format(sale.soldAt)}
+                      {timeFormatter.format(new Date(sale.sold_at))}
                     </TableCell>
                     <TableCell className='font-mono text-sm font-semibold'>
                       {sale.username}
                     </TableCell>
                     <TableCell>
                       <Badge variant='outline' className='font-mono text-[10px]'>
-                        {sale.profileName}
+                        {sale.profile_name}
                       </Badge>
                     </TableCell>
                     <TableCell className='text-right font-mono text-sm tabular-nums text-emerald-600 dark:text-emerald-400'>
-                      {formatIDR(sale.sellingPrice)}
+                      {formatIDR(sale.selling_price)}
                     </TableCell>
                     <TableCell className='font-mono text-xs'>
                       {sale.validity}
@@ -160,22 +164,10 @@ export function DailySalesTable({
                       {sale.server}
                     </TableCell>
                     <TableCell className='font-mono text-xs'>
-                      {sale.ipAddress}
+                      {sale.ip_address}
                     </TableCell>
                     <TableCell className='font-mono text-[11px]'>
-                      {sale.macAddress}
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='size-7 text-muted-foreground hover:text-destructive'
-                        onClick={() =>
-                          openDialog('delete', { target: sale })
-                        }
-                      >
-                        <Trash2 className='size-3.5' />
-                      </Button>
+                      {sale.mac_address}
                     </TableCell>
                   </TableRow>
                 ))
@@ -197,31 +189,23 @@ export function DailySalesTable({
                   </span>
                   <span
                     className={cn(
-                      'font-mono text-sm tabular-nums text-emerald-600 dark:text-emerald-400'
+                      'font-mono text-sm tabular-nums text-emerald-600 dark:text-emerald-400',
                     )}
                   >
-                    {formatIDR(sale.sellingPrice)}
+                    {formatIDR(sale.selling_price)}
                   </span>
                 </div>
                 <div className='flex items-center justify-between gap-2 text-[11px] text-muted-foreground'>
                   <span className='font-mono'>
-                    {timeFormatter.format(sale.soldAt)} · {sale.server}
+                    {timeFormatter.format(new Date(sale.sold_at))} ·{' '}
+                    {sale.server}
                   </span>
-                  <span className='font-mono'>{sale.profileName}</span>
+                  <span className='font-mono'>{sale.profile_name}</span>
                 </div>
                 <div className='flex items-center justify-between gap-2 text-[11px]'>
                   <span className='font-mono text-muted-foreground'>
-                    {sale.ipAddress} · {sale.macAddress}
+                    {sale.ip_address} · {sale.mac_address}
                   </span>
-                  <Button
-                    variant='ghost'
-                    size='sm'
-                    className='h-7 gap-1 px-2 text-xs text-destructive'
-                    onClick={() => openDialog('delete', { target: sale })}
-                  >
-                    <Trash2 className='size-3' />
-                    Delete
-                  </Button>
                 </div>
               </div>
             ))

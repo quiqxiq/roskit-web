@@ -1,11 +1,11 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
-import { Copy, Pencil, Printer, Trash2 } from 'lucide-react'
+import { Loader2, Pencil, Printer, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { useQuickPrintPresetsStore } from '@/stores/quick-print-presets-store'
-import { generateBatch } from '@/features/voucher/generate/data/data'
-import { type VoucherGenerateForm } from '@/features/voucher/generate/data/schema'
+import { useGenerateVoucher } from '@/features/voucher/generate/api/queries'
+import { type GeneratedVoucher } from '@/features/voucher/generate/data/schema'
 import { usePrintStore } from '@/features/voucher/print-render/store/print-store'
 import { usePresetsDialogStore } from '@/features/voucher/print/store/presets-dialog-store'
+import { useActiveRouterId } from '@/stores/active-router-store'
 import { cn } from '@/lib/utils'
 import { formatIDR } from '@/lib/format'
 import { Button } from '@/components/ui/button'
@@ -23,59 +23,82 @@ type QuickPrintCardProps = {
   preset: QuickPrintPreset
 }
 
+// Sample size for the "tap card to print" flow. Real users typically
+// generate larger batches via the Generate page; this is just a quick
+// preview.
 const SAMPLE_QTY = 5
 
-function presetToForm(preset: QuickPrintPreset): VoucherGenerateForm {
-  return {
-    qty: SAMPLE_QTY,
-    server: preset.server,
-    profile: preset.profile,
-    userType: preset.userMode,
-    nameLength: preset.userLength,
-    charSet: preset.charSet,
-    prefix: preset.prefix,
-    timeLimit: preset.timeLimit,
-    dataLimit: preset.dataLimit,
-    dataLimitUnit: preset.dataLimitUnit,
-    comment: preset.name,
-  }
+// Convert preset's UI data-limit (number + unit) back to the bytes int
+// the backend's voucher-generate endpoint expects.
+function dataLimitBytes(preset: QuickPrintPreset): number {
+  if (preset.dataLimit <= 0) return 0
+  return preset.dataLimitUnit === 'GB'
+    ? preset.dataLimit * 1_073_741_824
+    : preset.dataLimit * 1_048_576
 }
 
 export function QuickPrintCard({ preset }: QuickPrintCardProps) {
   const colorCls = colorClassMap[preset.color]
+  const routerId = useActiveRouterId()
   const openPrint = usePrintStore((s) => s.open)
   const openDialog = usePresetsDialogStore((s) => s.open)
-  const duplicatePreset = useQuickPrintPresetsStore((s) => s.duplicate)
+  const generateMutation = useGenerateVoucher(routerId ?? 0)
 
   const handleOpen = () => {
-    const vouchers = generateBatch(presetToForm(preset))
-    openPrint({
-      template: 'default',
-      vouchers,
-      meta: {
-        title: preset.package,
+    if (routerId == null) {
+      toast.error('Select a router first')
+      return
+    }
+    // Generate vouchers on the real router using the preset's config,
+    // then hand them off to the print preview dialog. Replaces the old
+    // mock `generateBatch` so the printed cards match what was actually
+    // created on RouterOS.
+    generateMutation.mutate(
+      {
+        qty: SAMPLE_QTY,
+        server: preset.server === 'all' ? undefined : preset.server,
+        user_type: preset.userMode,
+        name_length: preset.userLength,
+        prefix: preset.prefix || undefined,
+        char_set: preset.charSet,
         profile: preset.profile,
-        server: preset.server,
-        validity: preset.validity,
-        sellingPrice: preset.sellingPrice,
+        time_limit: preset.timeLimit || undefined,
+        data_limit: dataLimitBytes(preset),
+        comment: preset.name,
       },
-    })
+      {
+        onSuccess: (data) => {
+          const vouchers: GeneratedVoucher[] = data.vouchers.map((v, i) => ({
+            id: `${data.gencode}-${i + 1}`,
+            username: v.username,
+            password: v.password,
+            profile: data.profile,
+            comment: preset.name,
+          }))
+          openPrint({
+            template: 'default',
+            vouchers,
+            meta: {
+              title: preset.package,
+              profile: preset.profile,
+              server: preset.server,
+              validity: preset.validity,
+              sellingPrice: preset.sellingPrice,
+            },
+          })
+        },
+        onError: (err) => {
+          toast.error('Failed to generate batch', {
+            description: err.message,
+          })
+        },
+      },
+    )
   }
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation()
     openDialog('edit', { target: preset })
-  }
-
-  const handleDuplicate = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    const clone = duplicatePreset(preset.id)
-    if (clone) {
-      toast.success(`Duplicated preset '${preset.name}'`, {
-        description: `Created '${clone.name}'`,
-      })
-      openDialog('edit', { target: clone })
-    }
   }
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -87,8 +110,10 @@ export function QuickPrintCard({ preset }: QuickPrintCardProps) {
     <button
       type='button'
       onClick={handleOpen}
+      disabled={generateMutation.isPending}
       className={cn(
         'group relative flex w-full flex-col gap-3 rounded-md border border-l-4 bg-card p-4 text-left transition-all hover:shadow-md',
+        'disabled:cursor-wait disabled:opacity-70',
         colorCls.border
       )}
     >
@@ -100,7 +125,11 @@ export function QuickPrintCard({ preset }: QuickPrintCardProps) {
             colorCls.text
           )}
         >
-          <Printer className='size-5' />
+          {generateMutation.isPending ? (
+            <Loader2 className='size-5 animate-spin' />
+          ) : (
+            <Printer className='size-5' />
+          )}
         </div>
         <div className='min-w-0 flex-1'>
           <div className='flex items-center gap-2'>
@@ -131,10 +160,6 @@ export function QuickPrintCard({ preset }: QuickPrintCardProps) {
             <DropdownMenuItem onClick={handleEdit}>
               <Pencil className='size-4' />
               Edit
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleDuplicate}>
-              <Copy className='size-4' />
-              Duplicate
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

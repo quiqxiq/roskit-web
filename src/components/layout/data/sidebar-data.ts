@@ -14,9 +14,10 @@ import {
   Monitor,
   Package,
   Palette,
-  Server,
+  Printer,
   ServerOff,
   Settings,
+  Settings2,
   ShieldCheck,
   Ticket,
   UserCog,
@@ -34,23 +35,6 @@ export const sidebarData: SidebarData = {
     email: 'admin@mikhmon.local',
     avatar: '/avatars/shadcn.jpg',
   },
-  routers: [
-    {
-      name: 'MIKHMON',
-      logo: Wifi,
-      plan: 'MikroTik Hotspot Monitor',
-    },
-    {
-      name: 'Router-01',
-      logo: Server,
-      plan: '192.168.88.1 — Online',
-    },
-    {
-      name: 'Warnet-02',
-      logo: Monitor,
-      plan: '10.0.0.1 — Online',
-    },
-  ],
   navGroups: [
     {
       title: 'Main',
@@ -76,6 +60,7 @@ export const sidebarData: SidebarData = {
           items: [
             { title: 'Generate', url: '/voucher/generate' },
             { title: 'Print Queue', url: '/voucher/print' },
+            { title: 'Sales', url: '/voucher/sales' },
           ],
         },
       ],
@@ -100,6 +85,26 @@ export const sidebarData: SidebarData = {
             { title: 'Daily', url: '/report/daily' },
             { title: 'Monthly', url: '/report/monthly' },
           ],
+        },
+      ],
+    },
+    {
+      title: 'Admin',
+      items: [
+        {
+          title: 'Users',
+          url: '/admin/users',
+          icon: UserCog,
+        },
+        {
+          title: 'Settings',
+          url: '/admin/settings',
+          icon: Settings2,
+        },
+        {
+          title: 'Templates',
+          url: '/admin/templates',
+          icon: Printer,
         },
       ],
     },
