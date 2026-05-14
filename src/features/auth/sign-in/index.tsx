@@ -1,4 +1,4 @@
-import { Link, useSearch } from '@tanstack/react-router'
+import { useSearch } from '@tanstack/react-router'
 import {
   Card,
   CardContent,
@@ -23,12 +23,7 @@ export function SignIn() {
           <CardDescription>
             Enter your credentials to access the hotspot monitor.{' '}
             <br className='max-sm:hidden' /> Don't have an account?{' '}
-            <Link
-              to='/sign-up'
-              className='text-nowrap underline underline-offset-4 hover:text-primary'
-            >
-              Sign Up
-            </Link>
+            <span className='text-muted-foreground'>Contact your administrator.</span>
           </CardDescription>
         </CardHeader>
         <CardContent>

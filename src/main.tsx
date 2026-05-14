@@ -52,8 +52,10 @@ const queryClient = new QueryClient({
     onError: (error) => {
       if (error instanceof AxiosError) {
         if (error.response?.status === 401) {
+          // Token refresh is handled by the API client interceptor.
+          // If we reach this point, refresh also failed — auth is already reset
+          // by the interceptor, so just redirect.
           toast.error('Session expired!')
-          useAuthStore.getState().auth.reset()
           const redirect = `${router.history.location.href}`
           router.navigate({ to: '/sign-in', search: { redirect } })
         }
@@ -72,10 +74,18 @@ const queryClient = new QueryClient({
   }),
 })
 
-// Create a new router instance
+// Build the initial auth context from the Zustand store (synchronous read).
+const initialAuth = useAuthStore.getState().auth
+
 const router = createRouter({
   routeTree,
-  context: { queryClient },
+  context: {
+    queryClient,
+    auth: {
+      user: null, // user is hydrated later via useCurrentUser()
+      hasToken: Boolean(initialAuth.accessToken),
+    },
+  },
   defaultPreload: 'intent',
   defaultPreloadStaleTime: 0,
 })

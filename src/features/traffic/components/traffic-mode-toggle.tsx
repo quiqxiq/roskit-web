@@ -35,7 +35,7 @@ export function TrafficModeToggle({ mode, onChange }: TrafficModeToggleProps) {
         onClick={() => onChange('history')}
       >
         <History className='size-3.5' />
-        24h History
+        History
       </Button>
     </div>
   )

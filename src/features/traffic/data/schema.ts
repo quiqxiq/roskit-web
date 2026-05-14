@@ -1,15 +1,15 @@
 import { z } from 'zod'
 
-export const interfaceSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  type: z.string(),
-  mtu: z.string(),
-  running: z.boolean(),
-  disabled: z.boolean(),
-  comment: z.string(),
-})
-export type NetInterface = z.infer<typeof interfaceSchema>
+export type NetInterface = {
+  id: string
+  name: string
+  type: string
+  mtu: string
+  macAddress?: string
+  running: boolean
+  disabled: boolean
+  comment: string
+}
 
 export const trafficSampleSchema = z.object({
   timestamp: z.number(),

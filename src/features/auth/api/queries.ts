@@ -23,9 +23,10 @@ import {
 
 // After a successful login or first-admin setup, persist token + identity.
 // Backend is single-tenant — no tenant scope to track separately.
-function hydrateSession(token: string, user: AuthUser): void {
+function hydrateSession(accessToken: string, refreshToken: string, user: AuthUser): void {
   const auth = useAuthStore.getState().auth
-  auth.setAccessToken(token)
+  auth.setAccessToken(accessToken)
+  auth.setRefreshToken(refreshToken)
   auth.setUser(user)
 }
 
@@ -40,7 +41,7 @@ export function useLogin() {
   return useMutation<LoginResult, Error, LoginRequest>({
     mutationFn: (payload) => login(payload),
     onSuccess: (data) => {
-      hydrateSession(data.access_token, data.user)
+      hydrateSession(data.access_token, data.refresh_token, data.user)
       // Pre-seed the /auth/me query so consumers can read identity without
       // a second round-trip immediately after login.
       qc.setQueryData(qk.currentUser(), data.user)
@@ -77,7 +78,7 @@ export function useSetup() {
   return useMutation<SetupResult, Error, SetupRequest>({
     mutationFn: (payload) => setup(payload),
     onSuccess: (data) => {
-      hydrateSession(data.access_token, data.user)
+      hydrateSession(data.access_token, data.refresh_token, data.user)
       qc.setQueryData(qk.currentUser(), data.user)
     },
   })

@@ -1,136 +1,7 @@
-import { faker } from '@faker-js/faker'
-import { LOG_TOPICS, type LogEntry, type LogTopic } from './schema'
-
-faker.seed(600)
-
-const TOPIC_TEMPLATES: Record<LogTopic, string[]> = {
-  hotspot: [
-    '-> :{mac}: trying to log in by {auth}',
-    '-> :{mac}: logged in',
-    '-> :{mac}: logged out: {reason}',
-    '-> :{user}: ({ip}): trying to log in',
-    '-> :{user}: ({ip}): logged in',
-    '-> :{user}: ({ip}): session timeout',
-  ],
-  info: [
-    'system started',
-    'router rebooted',
-    'package updated',
-    'user {user} logged in via webfig',
-    'configuration changed by {user}',
-  ],
-  debug: [
-    'pool: assigned {ip} to {mac}',
-    'queue tree updated',
-    'dns cache flushed',
-    'arp entry added: {mac} -> {ip}',
-  ],
-  warning: [
-    'cpu load > 80%',
-    'memory usage high: {mem}%',
-    'temperature {temp}°C',
-    'license expires in {days} days',
-  ],
-  error: [
-    'failed to bind socket on {ip}',
-    'authentication failed for {user}',
-    'connection refused from {ip}',
-    'pppoe-out1 disconnected',
-  ],
-  system: [
-    'config saved',
-    'backup created',
-    'admin logged in from {ip}',
-    'admin logged out',
-    'firmware upgrade pending',
-  ],
-  firewall: [
-    'input drop: {ip} -> {ip2} proto tcp',
-    'forward accept: {ip}',
-    'masquerade rule applied',
-    'connection tracking limit',
-  ],
-  wireless: [
-    'station {mac} associated',
-    'station {mac} disassociated',
-    'wmm settings applied',
-    'channel changed to {chan}',
-  ],
-  dhcp: [
-    'lease added: {mac} -> {ip}',
-    'lease released: {mac}',
-    'discover from {mac}',
-    'offering {ip} to {mac}',
-  ],
-  pppoe: [
-    'session opened for {user}',
-    'session closed for {user}',
-    'authentication ok',
-    'lcp echo timeout',
-  ],
-}
-
-const AUTH_METHODS = ['http-chap', 'http-pap', 'mac', 'cookie', 'trial']
-const REASONS = ['user-request', 'idle-timeout', 'session-timeout', 'limits']
-
-function randomMac(): string {
-  return Array.from({ length: 6 }, () =>
-    faker.number.int({ min: 0, max: 255 }).toString(16).padStart(2, '0')
-  ).join(':')
-}
-
-function fillTemplate(tpl: string): string {
-  return tpl
-    .replace('{mac}', randomMac())
-    .replace('{ip}', faker.internet.ipv4())
-    .replace('{ip2}', faker.internet.ipv4())
-    .replace('{user}', faker.internet.username().toLowerCase())
-    .replace('{auth}', faker.helpers.arrayElement(AUTH_METHODS))
-    .replace('{reason}', faker.helpers.arrayElement(REASONS))
-    .replace('{mem}', faker.number.int({ min: 60, max: 95 }).toString())
-    .replace('{temp}', faker.number.int({ min: 35, max: 65 }).toString())
-    .replace('{days}', faker.number.int({ min: 1, max: 30 }).toString())
-    .replace('{chan}', faker.number.int({ min: 1, max: 11 }).toString())
-}
-
-let idCounter = 0
-
-function nextId(): string {
-  idCounter += 1
-  return `log-${idCounter.toString(36)}`
-}
-
-export function makeLogEntry(at: Date = new Date()): LogEntry {
-  const topic = faker.helpers.arrayElement(LOG_TOPICS as readonly LogTopic[])
-  const tpl = faker.helpers.arrayElement(TOPIC_TEMPLATES[topic])
-  const message = fillTemplate(tpl)
-  // primary topic + sometimes a secondary
-  const topics: string[] =
-    Math.random() < 0.3
-      ? [topic, faker.helpers.arrayElement(['info', 'debug'])]
-      : [topic]
-  return {
-    id: nextId(),
-    time: at,
-    topics,
-    message,
-  }
-}
-
-function buildSeed(count: number): LogEntry[] {
-  const result: LogEntry[] = []
-  const now = Date.now()
-  for (let i = 0; i < count; i++) {
-    const t = now - i * faker.number.int({ min: 2_000, max: 30_000 })
-    result.push(makeLogEntry(new Date(t)))
-  }
-  return result
-}
-
-export const logEntriesSeed: LogEntry[] = buildSeed(300)
+import { type LogEvent } from '../api/schema'
+import { type LogEntry } from './schema'
 
 export const LOG_MAX_ENTRIES = 500
-export const LOG_STREAM_INTERVAL_MS = 4000
 
 export const TOPIC_COLORS: Record<string, string> = {
   hotspot: 'bg-sky-500/10 text-sky-700 dark:text-sky-400',
@@ -165,4 +36,54 @@ export function filterLogs(
     if (term && !e.message.toLowerCase().includes(term)) return false
     return true
   })
+}
+
+const MONTHS: Record<string, number> = {
+  jan: 0,
+  feb: 1,
+  mar: 2,
+  apr: 3,
+  may: 4,
+  jun: 5,
+  jul: 6,
+  aug: 7,
+  sep: 8,
+  oct: 9,
+  nov: 10,
+  dec: 11,
+}
+
+function parseLogTime(timeStr: string): Date {
+  const iso = new Date(timeStr)
+  if (!isNaN(iso.getTime())) return iso
+  // RouterOS short format: "apr/30 10:11:12"
+  const [datePart, timePart] = timeStr.split(' ')
+  const [monthStr, dayStr] = (datePart ?? '').split('/')
+  const [h, m, s] = (timePart ?? '').split(':').map(Number)
+  const month = MONTHS[monthStr?.toLowerCase() ?? ''] ?? 0
+  const d = new Date(
+    new Date().getFullYear(),
+    month,
+    +dayStr,
+    h || 0,
+    m || 0,
+    s || 0
+  )
+  if (d.getTime() - Date.now() > 86_400_000) d.setFullYear(d.getFullYear() - 1)
+  return d
+}
+
+let _id = 0
+
+export function sseLogToLogEntry(event: LogEvent): LogEntry {
+  const fields = event.fields // ← tambah ini
+  return {
+    id: `sse-${++_id}`,
+    time: parseLogTime(fields.time),
+    topics: fields.topics
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean),
+    message: fields.message,
+  }
 }
